@@ -40,6 +40,7 @@ type Mode int
 const (
 	ModeSelect Mode = iota
 	ModeRename
+	ModeConfirmDelete
 )
 
 // item is a scored, renderable directory entry.
@@ -108,6 +109,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateSelect(msg)
 		case ModeRename:
 			return m.updateRename(msg)
+		case ModeConfirmDelete:
+			return m.updateConfirmDelete(msg)
 		}
 
 	case tea.WindowSizeMsg:
@@ -206,7 +209,7 @@ func (m Model) updateRename(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) selectCurrent() (tea.Model, tea.Cmd) {
-	// Check if any items are marked for deletion
+	// Check if any items are marked for deletion → show confirmation
 	var deleteNames []string
 	for _, it := range m.items {
 		if it.markedDelete {
@@ -214,12 +217,8 @@ func (m Model) selectCurrent() (tea.Model, tea.Cmd) {
 		}
 	}
 	if len(deleteNames) > 0 {
-		m.result = Result{
-			Action:      ActionDelete,
-			DeleteNames: deleteNames,
-		}
-		m.done = true
-		return m, tea.Quit
+		m.mode = ModeConfirmDelete
+		return m, nil
 	}
 
 	visible := m.visibleItems()
@@ -346,6 +345,28 @@ func clampCursor(cursor, visibleCount int) int {
 	return cursor
 }
 
+func (m Model) updateConfirmDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "y", "enter":
+		var deleteNames []string
+		for _, it := range m.items {
+			if it.markedDelete {
+				deleteNames = append(deleteNames, it.entry.Name)
+			}
+		}
+		m.result = Result{
+			Action:      ActionDelete,
+			DeleteNames: deleteNames,
+		}
+		m.done = true
+		return m, tea.Quit
+
+	case "n", "esc", "ctrl+c":
+		m.mode = ModeSelect
+	}
+	return m, nil
+}
+
 // Done returns true if the user has made a selection.
 func (m Model) Done() bool {
 	return m.done
@@ -364,51 +385,180 @@ func (m Model) View() string {
 
 	var b strings.Builder
 
-	// Search bar
-	searchPrefix := "  "
-	if m.filter != "" {
-		searchPrefix = m.styles.Cursor.Render(m.styles.Symbols.Cursor) + " "
-	}
-	b.WriteString(m.styles.SearchBar.Render(searchPrefix + m.filter))
-	b.WriteString("\n")
-
-	if m.mode == ModeRename {
+	switch m.mode {
+	case ModeConfirmDelete:
+		return m.viewConfirmDelete()
+	case ModeRename:
+		b.WriteString(m.viewSearchBar())
 		return m.viewRename(&b)
 	}
 
+	// Search bar
+	b.WriteString(m.viewSearchBar())
+
 	// Items
 	visible := m.visibleItems()
-	if len(visible) == 0 {
+
+	// Empty state
+	if len(m.allEntries) == 0 && m.filter == "" {
+		sym := m.styles.Symbols.Created
+		if sym == "" {
+			sym = "+"
+		}
+		b.WriteString("\n")
+		b.WriteString(m.styles.Success.Render(fmt.Sprintf("  %s No tries yet!", sym)))
+		b.WriteString("\n")
+		b.WriteString(m.styles.Dim.Render("  Type a name and press enter to create your first."))
+		b.WriteString("\n")
+	} else if len(visible) == 0 {
 		b.WriteString(m.styles.Dim.Render("  No matches"))
 		b.WriteString("\n")
-	}
+	} else {
+		for row, idx := range visible {
+			isSelected := row == m.cursor
 
-	for row, idx := range visible {
-		isSelected := row == m.cursor
-
-		if idx == -1 {
-			// "Create new" virtual entry
-			slug, _ := dirs.NormalizeDirName(m.filter)
-			name := dirs.FormatName(time.Now(), slug)
-			label := fmt.Sprintf("  Create new: %s", name)
-			if isSelected {
-				cursor := m.styles.Cursor.Render(m.styles.Symbols.Cursor)
-				label = fmt.Sprintf("%s Create new: %s", cursor, name)
-				b.WriteString(m.styles.Success.Render(label))
-			} else {
-				b.WriteString(m.styles.Success.Render(label))
+			if idx == -1 {
+				// "Create new" virtual entry
+				slug, _ := dirs.NormalizeDirName(m.filter)
+				name := dirs.FormatName(time.Now(), slug)
+				sym := m.styles.Symbols.Created
+				if sym == "" {
+					sym = "+"
+				}
+				if isSelected {
+					cursor := m.styles.Cursor.Render(m.styles.Symbols.Cursor)
+					b.WriteString(m.styles.Success.Render(fmt.Sprintf("%s %s Create new: %s", cursor, sym, name)))
+				} else {
+					b.WriteString(m.styles.Success.Render(fmt.Sprintf("  %s Create new: %s", sym, name)))
+				}
+				b.WriteString("\n")
+				continue
 			}
+
+			it := m.items[idx]
+			line := m.renderItem(it, isSelected)
+			b.WriteString(line)
 			b.WriteString("\n")
-			continue
 		}
 
-		it := m.items[idx]
-		line := m.renderItem(it, isSelected)
-		b.WriteString(line)
-		b.WriteString("\n")
+		// Scroll indicator
+		b.WriteString(m.viewScrollIndicator(visible))
 	}
 
 	// Status bar
+	b.WriteString(m.viewStatusBar())
+
+	return b.String()
+}
+
+// viewSearchBar renders the search/filter bar based on the theme's search_style.
+func (m Model) viewSearchBar() string {
+	// Count matches
+	matchCount := 0
+	for _, it := range m.items {
+		if m.filter == "" || it.matched {
+			matchCount++
+		}
+	}
+
+	// Build filter text with ghost autocomplete
+	filterText := m.filter
+	ghostText := ""
+	if m.filter != "" {
+		ghostText = m.getGhostCompletion()
+	}
+
+	cursor := m.styles.Symbols.Cursor
+	if m.filter == "" {
+		cursor = " "
+	}
+
+	var content string
+	if m.filter == "" {
+		content = m.styles.Dim.Render("  Type to filter...")
+	} else {
+		content = m.styles.Cursor.Render(cursor) + " " + filterText
+		if ghostText != "" {
+			content += m.styles.Ghost.Render(ghostText)
+		}
+	}
+
+	countLabel := ""
+	if m.filter != "" {
+		countLabel = m.styles.Dim.Render(fmt.Sprintf(" %d matches", matchCount))
+	}
+
+	switch m.theme.Layout.SearchStyle {
+	case "bordered":
+		// Bordered box with rounded corners
+		inner := content
+		if countLabel != "" {
+			inner += "  " + countLabel
+		}
+		return m.styles.SearchBox.Render(inner) + "\n"
+
+	case "underline":
+		line := content
+		if countLabel != "" {
+			line += "  " + countLabel
+		}
+		return line + "\n" + m.styles.Dim.Render(" ─────────────────────────────────────") + "\n"
+
+	default: // "minimal"
+		line := content
+		if countLabel != "" {
+			line += "  " + countLabel
+		}
+		return " " + line + "\n"
+	}
+}
+
+// getGhostCompletion returns the ghost autocomplete text (like fish shell).
+func (m Model) getGhostCompletion() string {
+	if m.filter == "" || len(m.items) == 0 {
+		return ""
+	}
+
+	filterLower := strings.ToLower(m.filter)
+
+	// Find the best matching slug that starts with the filter
+	for _, it := range m.items {
+		if !it.matched {
+			continue
+		}
+		// Extract slug from entry name
+		slug := it.entry.Name
+		if _, s, ok := dirs.ParseDatePrefix(it.entry.Name); ok {
+			slug = s
+		}
+		slugLower := strings.ToLower(slug)
+		if strings.HasPrefix(slugLower, filterLower) && len(slug) > len(m.filter) {
+			return slug[len(m.filter):]
+		}
+	}
+	return ""
+}
+
+// viewScrollIndicator shows scroll hints when items exceed max_visible.
+func (m Model) viewScrollIndicator(visible []int) string {
+	// Count total matching items (excluding create-new)
+	totalMatching := 0
+	for _, it := range m.items {
+		if m.filter == "" || it.matched {
+			totalMatching++
+		}
+	}
+
+	if totalMatching <= m.maxVisible {
+		return ""
+	}
+
+	hidden := totalMatching - m.maxVisible
+	return m.styles.ScrollHint.Render(fmt.Sprintf("  ↕ %d more", hidden)) + "\n"
+}
+
+// viewStatusBar renders context-sensitive key hints.
+func (m Model) viewStatusBar() string {
 	hasDeletes := false
 	for _, it := range m.items {
 		if it.markedDelete {
@@ -417,27 +567,75 @@ func (m Model) View() string {
 		}
 	}
 
-	var hints []string
-	if hasDeletes {
-		hints = append(hints, "enter: delete marked")
-	} else {
-		hints = append(hints, "enter: select")
+	type hint struct {
+		key  string
+		desc string
 	}
-	hints = append(hints, "ctrl-d: mark delete", "ctrl-r: rename", "esc: cancel")
-	b.WriteString(m.styles.StatusBar.Render("  " + strings.Join(hints, "  •  ")))
 
-	return b.String()
+	var hints []hint
+	if hasDeletes {
+		hints = append(hints, hint{"enter", "delete marked"})
+	} else {
+		hints = append(hints, hint{"enter", "select"})
+	}
+	hints = append(hints,
+		hint{"ctrl-d", "delete"},
+		hint{"ctrl-r", "rename"},
+		hint{"esc", "quit"},
+	)
+
+	var parts []string
+	for _, h := range hints {
+		parts = append(parts, m.styles.StatusKey.Render(h.key)+" "+m.styles.Dim.Render(h.desc))
+	}
+
+	separator := m.styles.Dim.Render(" ─────────────────────────────────────────")
+	bar := "  " + strings.Join(parts, m.styles.Dim.Render("  •  "))
+	return separator + "\n" + bar
+}
+
+// viewConfirmDelete renders the delete confirmation dialog.
+func (m Model) viewConfirmDelete() string {
+	var names []string
+	for _, it := range m.items {
+		if it.markedDelete {
+			names = append(names, it.entry.Name)
+		}
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "Delete %d %s?\n\n",
+		len(names), pluralize(len(names), "directory", "directories"))
+
+	for _, name := range names {
+		sym := m.styles.Symbols.Deleted
+		if sym == "" {
+			sym = "x"
+		}
+		fmt.Fprintf(&b, "  %s %s\n", m.styles.Danger.Render(sym), m.styles.Danger.Render(name))
+	}
+
+	b.WriteString("\n")
+	b.WriteString(m.styles.StatusKey.Render("y") + m.styles.Dim.Render(" confirm") +
+		m.styles.Dim.Render("  •  ") +
+		m.styles.StatusKey.Render("n") + m.styles.Dim.Render("/") +
+		m.styles.StatusKey.Render("esc") + m.styles.Dim.Render(" cancel"))
+
+	return m.styles.ConfirmBox.Render(b.String())
 }
 
 func (m Model) viewRename(b *strings.Builder) string {
 	entry := m.items[m.renameIdx].entry
-	b.WriteString(fmt.Sprintf("  Rename: %s\n", m.styles.Dim.Render(entry.Name)))
-	b.WriteString(fmt.Sprintf("  New name: %s▏\n", m.renameInput))
-	b.WriteString(m.styles.StatusBar.Render("  enter: confirm  •  esc: cancel"))
+	fmt.Fprintf(b, "  Rename: %s\n", m.styles.Dim.Render(entry.Name))
+	fmt.Fprintf(b, "  New name: %s▏\n", m.renameInput)
+	b.WriteString(m.styles.Dim.Render(" ─────────────────────────────────────────") + "\n")
+	b.WriteString("  " + m.styles.StatusKey.Render("enter") + m.styles.Dim.Render(" confirm") +
+		m.styles.Dim.Render("  •  ") +
+		m.styles.StatusKey.Render("esc") + m.styles.Dim.Render(" cancel"))
 	return b.String()
 }
 
-// renderItem renders a single directory entry with fuzzy highlights.
+// renderItem renders a single directory entry with column-based layout.
 func (m Model) renderItem(it item, isSelected bool) string {
 	var b strings.Builder
 
@@ -449,43 +647,122 @@ func (m Model) renderItem(it item, isSelected bool) string {
 	}
 
 	name := it.entry.Name
+	hasDate := fuzzy.HasDatePrefix(name)
+
+	// Extract slug and date parts
+	var datePart, slugPart string
+	if hasDate {
+		datePart = name[:10] // "2026-04-11"
+		slugPart = name[dirs.DatePrefixLen:]
+	} else {
+		slugPart = name
+	}
+
+	// Build match set adjusted for slug position
 	matchSet := make(map[int]bool)
 	for _, pos := range it.matchPositions {
 		matchSet[pos] = true
 	}
 
-	hasDate := fuzzy.HasDatePrefix(name)
-	showDate := m.theme.Layout.ShowDatePrefix
+	// Render columns based on theme config
+	columns := m.theme.Layout.Columns
+	if len(columns) == 0 {
+		columns = []string{"icon", "name", "date", "time"}
+	}
 
-	for i, ch := range name {
-		char := string(ch)
-
-		if it.markedDelete {
-			b.WriteString(m.styles.Danger.Render(char))
-			continue
+	for ci, col := range columns {
+		if ci > 0 {
+			b.WriteString(" ")
 		}
 
-		if matchSet[i] {
-			// Matched character
-			if isSelected {
-				b.WriteString(m.styles.Match.Render(char))
-			} else {
-				b.WriteString(m.styles.Match.Render(char))
+		switch col {
+		case "icon":
+			if m.theme.Layout.ShowIcons {
+				if it.markedDelete {
+					sym := m.styles.Symbols.Deleted
+					if sym == "" {
+						sym = "x"
+					}
+					b.WriteString(m.styles.Danger.Render(sym))
+				} else {
+					// Look up content-aware icon from slug, fall back to theme default
+					icon := theme.LookupIcon(slugPart, m.styles.Symbols.Folder)
+					if icon != "" {
+						b.WriteString(icon)
+					}
+				}
 			}
-		} else if hasDate && showDate && i < dirs.DatePrefixLen {
-			// Date prefix — dimmed
-			b.WriteString(m.styles.Dim.Render(char))
-		} else if isSelected {
-			b.WriteString(m.styles.Selected.Render(char))
-		} else {
-			b.WriteString(m.styles.Normal.Render(char))
+
+		case "name":
+			m.renderName(&b, it, isSelected, slugPart, hasDate, name, matchSet)
+
+		case "date":
+			if datePart != "" && m.theme.Layout.ShowDate != "hide" {
+				b.WriteString(m.styles.Dim.Render(datePart))
+			}
+
+		case "time":
+			if m.theme.Layout.ShowTime {
+				relTime := dirs.FormatRelativeTime(it.entry.Mtime)
+				b.WriteString(m.styles.TimeText.Render(relTime))
+			}
 		}
 	}
 
-	// Delete marker
-	if it.markedDelete {
+	// Delete marker (if no icon column showed it)
+	if it.markedDelete && !m.theme.Layout.ShowIcons {
 		b.WriteString(" " + m.styles.Danger.Render(m.styles.Symbols.Deleted))
 	}
 
 	return b.String()
+}
+
+// renderName renders the name/slug portion with fuzzy highlights.
+func (m Model) renderName(b *strings.Builder, it item, isSelected bool, slugPart string, hasDate bool, fullName string, matchSet map[int]bool) {
+	showDate := m.theme.Layout.ShowDate
+
+	if showDate == "inline" && hasDate {
+		// Inline: render full name with date dimmed
+		for i, ch := range fullName {
+			char := string(ch)
+			if it.markedDelete {
+				b.WriteString(m.styles.Danger.Render(char))
+			} else if matchSet[i] {
+				b.WriteString(m.styles.Match.Render(char))
+			} else if i < dirs.DatePrefixLen {
+				b.WriteString(m.styles.Dim.Render(char))
+			} else if isSelected {
+				b.WriteString(m.styles.Selected.Render(char))
+			} else {
+				b.WriteString(m.styles.Normal.Render(char))
+			}
+		}
+	} else {
+		// Separated: render just the slug, highlight matches adjusted
+		offset := 0
+		if hasDate {
+			offset = dirs.DatePrefixLen
+		}
+
+		for i, ch := range slugPart {
+			char := string(ch)
+			origIdx := i + offset
+			if it.markedDelete {
+				b.WriteString(m.styles.Danger.Render(char))
+			} else if matchSet[origIdx] {
+				b.WriteString(m.styles.Match.Render(char))
+			} else if isSelected {
+				b.WriteString(m.styles.Selected.Render(char))
+			} else {
+				b.WriteString(m.styles.Normal.Render(char))
+			}
+		}
+	}
+}
+
+func pluralize(n int, singular, plural string) string {
+	if n == 1 {
+		return singular
+	}
+	return plural
 }

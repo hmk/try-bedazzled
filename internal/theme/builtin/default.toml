@@ -14,8 +14,13 @@ bg      = ""          # Empty = transparent (terminal default)
 cursor  = "▸"
 created = "✦"
 deleted = "✗"
-folder  = ""
+folder  = "📂"
 
 [layout]
-show_date_prefix = true
-max_visible      = 12
+max_visible  = 12
+show_icons   = true
+show_date    = "right"
+show_time    = true
+columns      = ["icon", "name", "date", "time"]
+search_style = "bordered"
+selected_bg  = true

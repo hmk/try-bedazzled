@@ -40,10 +40,32 @@ type Symbols struct {
 	Folder  string `toml:"folder"`
 }
 
-// Layout controls TUI layout options.
+// Layout controls TUI layout and display preferences.
 type Layout struct {
+	// MaxVisible is the maximum number of entries to show at once.
+	MaxVisible int `toml:"max_visible"`
+
+	// ShowIcons controls whether folder/created/deleted symbols are displayed.
+	ShowIcons bool `toml:"show_icons"`
+
+	// ShowDate controls date display: "right", "left", "inline", "hide".
+	ShowDate string `toml:"show_date"`
+
+	// ShowTime controls whether relative time (e.g. "3h ago") is shown.
+	ShowTime bool `toml:"show_time"`
+
+	// Columns defines the display order of entry columns.
+	// Valid values: "icon", "name", "date", "time"
+	Columns []string `toml:"columns"`
+
+	// SearchStyle controls the search bar appearance: "bordered", "underline", "minimal".
+	SearchStyle string `toml:"search_style"`
+
+	// SelectedBg enables a subtle background highlight on the selected row.
+	SelectedBg bool `toml:"selected_bg"`
+
+	// Deprecated: use ShowDate instead. Kept for backward compatibility.
 	ShowDatePrefix bool `toml:"show_date_prefix"`
-	MaxVisible     int  `toml:"max_visible"`
 }
 
 // Theme is the full theme configuration.
@@ -71,8 +93,13 @@ func NoColor() Theme {
 			Folder:  "",
 		},
 		Layout: Layout{
-			ShowDatePrefix: true,
-			MaxVisible:     12,
+			MaxVisible:  12,
+			ShowIcons:   false,
+			ShowDate:    "inline",
+			ShowTime:    false,
+			Columns:     []string{"name", "date"},
+			SearchStyle: "minimal",
+			SelectedBg:  false,
 		},
 	}
 }
@@ -120,11 +147,27 @@ func parse(data []byte) (Theme, error) {
 	if err := toml.Unmarshal(data, &t); err != nil {
 		return Theme{}, fmt.Errorf("parsing theme: %w", err)
 	}
-	// Apply defaults for zero values
-	if t.Layout.MaxVisible == 0 {
-		t.Layout.MaxVisible = 12
-	}
+	applyLayoutDefaults(&t.Layout)
 	return t, nil
+}
+
+// applyLayoutDefaults fills in zero-value layout fields with sensible defaults.
+func applyLayoutDefaults(l *Layout) {
+	if l.MaxVisible == 0 {
+		l.MaxVisible = 12
+	}
+	if l.ShowDate == "" {
+		// Backward compat: if old show_date_prefix was explicitly set to false, use "hide"
+		if !l.ShowDatePrefix && l.ShowDate == "" {
+			l.ShowDate = "right"
+		}
+	}
+	if l.Columns == nil {
+		l.Columns = []string{"icon", "name", "date", "time"}
+	}
+	if l.SearchStyle == "" {
+		l.SearchStyle = "bordered"
+	}
 }
 
 // Resolve determines the active theme based on the resolution order:

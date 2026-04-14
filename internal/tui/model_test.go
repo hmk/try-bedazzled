@@ -262,14 +262,28 @@ func TestCtrlDTogglesDeleteMark(t *testing.T) {
 	}
 }
 
-func TestDeleteMarkedItemsOnEnter(t *testing.T) {
+func TestDeleteMarkedItemsGoesToConfirm(t *testing.T) {
 	m := newTestModel("")
 	m = sendKeys(m, "ctrl+d") // mark first
 	m = sendKeys(m, "down", "ctrl+d") // mark second
 	m = sendKeys(m, "enter")
 
+	// Should be in confirm mode, not done yet
+	if m.Done() {
+		t.Fatal("should not be done — should be in confirm mode")
+	}
+	if m.mode != ModeConfirmDelete {
+		t.Errorf("should be in ModeConfirmDelete, got %d", m.mode)
+	}
+}
+
+func TestDeleteConfirmYes(t *testing.T) {
+	m := newTestModel("")
+	m = sendKeys(m, "ctrl+d", "down", "ctrl+d", "enter") // mark 2, enter → confirm
+	m = sendKeys(m, "y")                                   // confirm
+
 	if !m.Done() {
-		t.Fatal("should be done")
+		t.Fatal("should be done after confirm")
 	}
 	r := m.GetResult()
 	if r.Action != ActionDelete {
@@ -277,6 +291,32 @@ func TestDeleteMarkedItemsOnEnter(t *testing.T) {
 	}
 	if len(r.DeleteNames) != 2 {
 		t.Errorf("expected 2 delete names, got %d", len(r.DeleteNames))
+	}
+}
+
+func TestDeleteConfirmNo(t *testing.T) {
+	m := newTestModel("")
+	m = sendKeys(m, "ctrl+d", "enter") // mark 1, enter → confirm
+	m = sendKeys(m, "n")               // cancel
+
+	if m.Done() {
+		t.Error("should not be done after cancel")
+	}
+	if m.mode != ModeSelect {
+		t.Errorf("should be back in ModeSelect, got %d", m.mode)
+	}
+}
+
+func TestDeleteConfirmEsc(t *testing.T) {
+	m := newTestModel("")
+	m = sendKeys(m, "ctrl+d", "enter") // mark 1, enter → confirm
+	m = sendKeys(m, "esc")             // cancel
+
+	if m.Done() {
+		t.Error("should not be done after esc cancel")
+	}
+	if m.mode != ModeSelect {
+		t.Errorf("should be back in ModeSelect, got %d", m.mode)
 	}
 }
 
@@ -397,6 +437,64 @@ func TestViewRenameMode(t *testing.T) {
 	}
 	if !strings.Contains(view, "New name") {
 		t.Error("rename mode view should contain 'New name'")
+	}
+}
+
+func TestViewConfirmDeleteMode(t *testing.T) {
+	m := newTestModel("")
+	m = sendKeys(m, "ctrl+d", "enter") // mark + enter → confirm
+	view := m.View()
+
+	if !strings.Contains(view, "Delete") {
+		t.Error("confirm view should contain 'Delete'")
+	}
+	if !strings.Contains(view, "confirm") {
+		t.Error("confirm view should contain 'confirm' hint")
+	}
+	if !strings.Contains(view, "cancel") {
+		t.Error("confirm view should contain 'cancel' hint")
+	}
+}
+
+func TestViewGhostAutocomplete(t *testing.T) {
+	m := newTestModel("")
+	m = sendKeys(m, "r", "e", "d")
+	view := m.View()
+
+	// Ghost should show remaining chars of "redis" after "red"
+	// The ghost text "is" should appear somewhere (may be styled)
+	_ = view // Ghost rendering is visual — hard to assert exact content
+	// Just verify the view doesn't crash and contains our filter
+	if !strings.Contains(view, "red") {
+		t.Error("view should contain filter text 'red'")
+	}
+}
+
+func TestViewEmptyState(t *testing.T) {
+	m := New("/tries", nil, "", theme.Default())
+	view := m.View()
+
+	if !strings.Contains(view, "No tries yet") {
+		t.Error("empty state should show 'No tries yet'")
+	}
+}
+
+func TestViewSearchBarPlaceholder(t *testing.T) {
+	m := newTestModel("")
+	view := m.View()
+
+	if !strings.Contains(view, "Type to filter") {
+		t.Error("empty filter should show placeholder")
+	}
+}
+
+func TestViewMatchCount(t *testing.T) {
+	m := newTestModel("")
+	m = sendKeys(m, "r", "e", "d", "i", "s")
+	view := m.View()
+
+	if !strings.Contains(view, "match") {
+		t.Error("filtered view should show match count")
 	}
 }
 

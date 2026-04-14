@@ -18,5 +18,10 @@ deleted = "x"
 folder  = ""
 
 [layout]
-show_date_prefix = true
-max_visible      = 12
+max_visible  = 12
+show_icons   = false
+show_date    = "inline"
+show_time    = false
+columns      = ["name", "date"]
+search_style = "minimal"
+selected_bg  = false

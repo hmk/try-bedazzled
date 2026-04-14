@@ -55,8 +55,23 @@ func TestLoadBuiltinDefault(t *testing.T) {
 	if theme.Layout.MaxVisible != 12 {
 		t.Errorf("max_visible = %d, want 12", theme.Layout.MaxVisible)
 	}
-	if !theme.Layout.ShowDatePrefix {
-		t.Error("show_date_prefix should be true")
+	if !theme.Layout.ShowIcons {
+		t.Error("show_icons should be true for default theme")
+	}
+	if theme.Layout.ShowDate != "right" {
+		t.Errorf("show_date = %q, want right", theme.Layout.ShowDate)
+	}
+	if !theme.Layout.ShowTime {
+		t.Error("show_time should be true for default theme")
+	}
+	if theme.Layout.SearchStyle != "bordered" {
+		t.Errorf("search_style = %q, want bordered", theme.Layout.SearchStyle)
+	}
+	if len(theme.Layout.Columns) != 4 {
+		t.Errorf("expected 4 columns, got %d", len(theme.Layout.Columns))
+	}
+	if theme.Symbols.Folder != "📂" {
+		t.Errorf("folder = %q, want 📂", theme.Symbols.Folder)
 	}
 }
 
@@ -90,6 +105,42 @@ func TestLoadBuiltinMinimal(t *testing.T) {
 	}
 	if theme.Symbols.Created != "+" {
 		t.Errorf("minimal created = %q, want +", theme.Symbols.Created)
+	}
+	if theme.Layout.ShowIcons {
+		t.Error("minimal should have show_icons = false")
+	}
+	if theme.Layout.SearchStyle != "minimal" {
+		t.Errorf("minimal search_style = %q, want minimal", theme.Layout.SearchStyle)
+	}
+	if theme.Layout.ShowTime {
+		t.Error("minimal should have show_time = false")
+	}
+}
+
+func TestLayoutDefaultsFillIn(t *testing.T) {
+	// A theme with only max_visible set should get defaults for everything else
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sparse.toml")
+	os.WriteFile(path, []byte(`
+[layout]
+max_visible = 8
+`), 0644)
+
+	theme, err := LoadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if theme.Layout.MaxVisible != 8 {
+		t.Errorf("max_visible = %d, want 8", theme.Layout.MaxVisible)
+	}
+	if theme.Layout.ShowDate != "right" {
+		t.Errorf("show_date should default to 'right', got %q", theme.Layout.ShowDate)
+	}
+	if theme.Layout.SearchStyle != "bordered" {
+		t.Errorf("search_style should default to 'bordered', got %q", theme.Layout.SearchStyle)
+	}
+	if len(theme.Layout.Columns) != 4 {
+		t.Errorf("columns should default to 4 entries, got %d", len(theme.Layout.Columns))
 	}
 }
 
@@ -193,6 +244,12 @@ func TestNoColor(t *testing.T) {
 	// Layout defaults
 	if theme.Layout.MaxVisible != 12 {
 		t.Errorf("NoColor max_visible = %d, want 12", theme.Layout.MaxVisible)
+	}
+	if theme.Layout.ShowIcons {
+		t.Error("NoColor should have show_icons = false")
+	}
+	if theme.Layout.SearchStyle != "minimal" {
+		t.Errorf("NoColor search_style = %q, want minimal", theme.Layout.SearchStyle)
 	}
 }
 
