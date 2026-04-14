@@ -1,0 +1,22 @@
+# try-bedazzled minimal theme
+# ASCII-safe, no unicode, high contrast
+# Good for accessibility, CI, and terminals without unicode support
+
+[colors]
+accent  = "#FFFFFF"
+dim     = "#808080"
+text    = "#FFFFFF"
+match   = "#FFFF00"
+danger  = "#FF0000"
+success = "#00FF00"
+bg      = ""
+
+[symbols]
+cursor  = ">"
+created = "+"
+deleted = "x"
+folder  = ""
+
+[layout]
+show_date_prefix = true
+max_visible      = 12

@@ -1,0 +1,21 @@
+# try-bedazzled default theme
+# A clean, modern look with purple accents
+
+[colors]
+accent  = "#7C3AED"   # Selection highlight, cursor
+dim     = "#6B7280"   # Dates, secondary text
+text    = "#E5E7EB"   # Primary text
+match   = "#FACC15"   # Fuzzy match highlight
+danger  = "#EF4444"   # Delete confirmation
+success = "#10B981"   # Creation
+bg      = ""          # Empty = transparent (terminal default)
+
+[symbols]
+cursor  = "▸"
+created = "✦"
+deleted = "✗"
+folder  = ""
+
+[layout]
+show_date_prefix = true
+max_visible      = 12

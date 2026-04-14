@@ -1,0 +1,21 @@
+# try-bedazzled catppuccin (mocha) theme
+# Soothing pastel colors — https://catppuccin.com
+
+[colors]
+accent  = "#CBA6F7"   # Mauve
+dim     = "#6C7086"   # Overlay0
+text    = "#CDD6F4"   # Text
+match   = "#F9E2AF"   # Yellow
+danger  = "#F38BA8"   # Red
+success = "#A6E3A1"   # Green
+bg      = ""
+
+[symbols]
+cursor  = "▸"
+created = "✦"
+deleted = "✗"
+folder  = ""
+
+[layout]
+show_date_prefix = true
+max_visible      = 12

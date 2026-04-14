@@ -1,0 +1,21 @@
+# try-bedazzled dracula theme
+# Dark and colorful — https://draculatheme.com
+
+[colors]
+accent  = "#BD93F9"   # Purple
+dim     = "#6272A4"   # Comment
+text    = "#F8F8F2"   # Foreground
+match   = "#F1FA8C"   # Yellow
+danger  = "#FF5555"   # Red
+success = "#50FA7B"   # Green
+bg      = ""
+
+[symbols]
+cursor  = "▸"
+created = "✦"
+deleted = "✗"
+folder  = ""
+
+[layout]
+show_date_prefix = true
+max_visible      = 12
