@@ -126,7 +126,10 @@ func runWithInjectedKeys(m tui.Model, keys string, triesPath string) error {
 	keyList := parseKeyList(keys)
 
 	var model tea.Model = m
+	var lastView string
 	for _, k := range keyList {
+		// Capture frame before processing key (for test verification)
+		lastView = model.(tui.Model).View()
 		msg := parseKeyMsg(k)
 		var cmd tea.Cmd
 		model, cmd = model.Update(msg)
@@ -137,8 +140,8 @@ func runWithInjectedKeys(m tui.Model, keys string, triesPath string) error {
 	}
 
 	fm := model.(tui.Model)
-	// Print one frame to stderr for test verification
-	fmt.Fprint(os.Stderr, fm.View())
+	// Print last visible frame to stderr for test verification
+	fmt.Fprint(os.Stderr, lastView)
 
 	return handleResult(fm.GetResult(), triesPath)
 }
