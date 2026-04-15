@@ -19,6 +19,9 @@ func newThemeCmd() *cobra.Command {
 Browse built-in themes, see how they look in real-time, and press
 Enter to apply. Your choice is saved to ~/.config/try/config.toml.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cleanup := setupTTYRenderer()
+			defer cleanup()
+
 			m := tui.NewThemePicker()
 
 			p := tea.NewProgram(m, tea.WithOutput(os.Stderr))
