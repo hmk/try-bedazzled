@@ -98,8 +98,9 @@ func runSelector(triesPath, initialFilter, andKeys string, andExit bool) error {
 		return fmt.Errorf("scanning %s: %w", triesPath, err)
 	}
 
-	// Resolve theme
-	t := theme.Resolve(noColors, "")
+	// Resolve theme — read from config file if available
+	cfg, _ := theme.LoadConfig()
+	t := theme.Resolve(noColors, cfg.Theme)
 
 	// Create model
 	m := tui.New(triesPath, scanResult.Entries, initialFilter, t)
