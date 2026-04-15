@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hmk/try-bedazzled/internal/dirs"
 	"github.com/hmk/try-bedazzled/internal/shell"
 	"github.com/hmk/try-bedazzled/internal/theme"
@@ -92,6 +93,15 @@ func newExecCmd() *cobra.Command {
 }
 
 func runSelector(triesPath, initialFilter, andKeys string, andExit bool) error {
+	// Set up Lip Gloss renderer on /dev/tty so color detection works
+	// even though stdout is captured by the shell wrapper.
+	ttyFile, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+	if err == nil {
+		defer ttyFile.Close()
+		renderer := lipgloss.NewRenderer(ttyFile)
+		lipgloss.SetDefaultRenderer(renderer)
+	}
+
 	// Scan directories
 	scanResult, err := dirs.Scan(triesPath)
 	if err != nil {
