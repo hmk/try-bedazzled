@@ -1,0 +1,63 @@
+version: 2
+
+project_name: try-bedazzled
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: try
+    main: ./cmd/try
+    binary: try
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/hmk/try-bedazzled/internal/cli.Version={{.Version}}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+nfpms:
+  - id: packages
+    package_name: try-bedazzled
+    vendor: hmk
+    homepage: https://github.com/hmk/try-bedazzled
+    maintainer: hmk
+    description: A beautiful, themeable directory manager for try experiments
+    license: BSD-3-Clause
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: hmk
+    name: try-bedazzled
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
