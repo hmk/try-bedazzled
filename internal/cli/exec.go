@@ -63,6 +63,14 @@ func newExecCmd() *cobra.Command {
 				case "init":
 					// Shouldn't reach here but handle gracefully
 					return fmt.Errorf("try init should be called directly, not through exec")
+				case "theme":
+					// Run theme picker directly — it's not a selector query
+					return newThemeCmd().RunE(cmd, args[1:])
+				case "--help", "-h", "help":
+					return cmd.Root().Help()
+				case "--version", "-v":
+					fmt.Printf("try version %s\n", Version)
+					return nil
 				}
 			}
 
