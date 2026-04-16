@@ -156,7 +156,7 @@ func (m ThemePickerModel) View() string {
 	var preview string
 	if cursor >= 0 && cursor < len(m.themes) {
 		selectedTheme := m.previews[m.themes[cursor]]
-		preview = renderPreview(selectedTheme)
+		preview = RenderPreview(selectedTheme)
 	}
 
 	rightPane := lipgloss.NewStyle().
@@ -187,8 +187,9 @@ func (m ThemePickerModel) GetResult() ThemePickerResult {
 	return m.result
 }
 
-// renderPreview generates a fake try-list preview using the given theme.
-func renderPreview(t theme.Theme) string {
+// RenderPreview generates a fake try-list preview using the given theme.
+// Used by both the standalone theme picker and the in-settings theme submode.
+func RenderPreview(t theme.Theme) string {
 	styles := NewStyles(t)
 
 	fakeEntries := []struct {
