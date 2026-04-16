@@ -147,15 +147,36 @@ func (m Model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.done = true
 		return m, tea.Quit
 
-	case keyMatch(msg, "up", "ctrl+p"):
+	case keyMatch(msg, "up", "ctrl+k"):
+		// Move cursor up; scroll viewport if at top
 		if m.cursor > 0 {
 			m.cursor--
+		} else if m.offset > 0 {
+			m.offset--
 		}
 
-	case keyMatch(msg, "down", "ctrl+n"):
-		maxIdx := m.visibleCount() - 1
-		if m.cursor < maxIdx {
+	case keyMatch(msg, "down", "ctrl+j"):
+		// Move cursor down; scroll viewport if at bottom
+		visible := m.visibleItems()
+		lastVisibleIdx := len(visible) - 1
+		if m.cursor < lastVisibleIdx {
 			m.cursor++
+		} else {
+			// Cursor is at bottom of viewport — try to scroll
+			// Only real items scroll (the "Create new" virtual entry
+			// stays pinned at the bottom of the viewport)
+			total := m.totalMatchingCount()
+			realVisibleCount := m.maxVisible
+			if m.hasCreateNew() {
+				realVisibleCount--
+			}
+			maxOffset := total - realVisibleCount
+			if maxOffset < 0 {
+				maxOffset = 0
+			}
+			if m.offset < maxOffset {
+				m.offset++
+			}
 		}
 
 	case keyMatch(msg, "enter"):
@@ -167,10 +188,17 @@ func (m Model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case keyMatch(msg, "ctrl+r"):
 		m = m.startRename()
 
+	case keyMatch(msg, "ctrl+p"):
+		m.previewEnabled = !m.previewEnabled
+		if m.onPreviewToggle != nil {
+			m.onPreviewToggle(m.previewEnabled)
+		}
+
 	case keyMatch(msg, "backspace"):
 		if len(m.filter) > 0 {
 			m.filter = m.filter[:len(m.filter)-1]
 			m.items = buildItems(m.allEntries, m.filter)
+			m.offset = 0 // reset scroll when filter changes
 			m.cursor = clampCursor(m.cursor, m.visibleCount())
 		}
 
@@ -180,6 +208,7 @@ func (m Model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if len(str) == 1 && str[0] >= 32 && str[0] < 127 {
 			m.filter += str
 			m.items = buildItems(m.allEntries, m.filter)
+			m.offset = 0 // reset scroll when filter changes
 			m.cursor = clampCursor(m.cursor, m.visibleCount())
 		}
 	}
@@ -324,32 +353,71 @@ func buildItems(allEntries []dirs.Entry, filter string) []item {
 	return items
 }
 
-// visibleItems returns indices into m.items for items to display.
-// Returns -1 as the index for the "Create new" virtual entry.
-func (m Model) visibleItems() []int {
-	var indices []int
-
+// allMatchingIndices returns indices into m.items for all matching items
+// (ignoring viewport/offset). Used for scroll math.
+func (m Model) allMatchingIndices() []int {
+	var all []int
 	for i, it := range m.items {
 		if m.filter == "" || it.matched {
-			indices = append(indices, i)
-		}
-		if len(indices) >= m.maxVisible {
-			break
+			all = append(all, i)
 		}
 	}
+	return all
+}
 
-	// Add "Create new" option if filter is active and produces a valid name
-	if m.filter != "" {
-		if _, ok := dirs.NormalizeDirName(m.filter); ok {
-			indices = append(indices, -1) // -1 = create new
-		}
+// hasCreateNew returns true when the filter produces a valid slug
+// and thus a "Create new" virtual entry is shown.
+func (m Model) hasCreateNew() bool {
+	if m.filter == "" {
+		return false
+	}
+	_, ok := dirs.NormalizeDirName(m.filter)
+	return ok
+}
+
+// visibleItems returns indices into m.items for items displayed in the
+// current viewport. Returns -1 as the index for the "Create new" virtual
+// entry which always appears at the bottom of the visible list.
+func (m Model) visibleItems() []int {
+	all := m.allMatchingIndices()
+
+	start := m.offset
+	if start > len(all) {
+		start = len(all)
+	}
+	if start < 0 {
+		start = 0
+	}
+
+	end := start + m.maxVisible
+	// Reserve a slot for "Create new" when it applies
+	if m.hasCreateNew() && end > start {
+		end--
+	}
+	if end > len(all) {
+		end = len(all)
+	}
+
+	var indices []int
+	indices = append(indices, all[start:end]...)
+
+	if m.hasCreateNew() {
+		indices = append(indices, -1)
 	}
 
 	return indices
 }
 
+// visibleCount returns the number of rows currently rendered in the viewport
+// (including the "Create new" virtual row when applicable).
 func (m Model) visibleCount() int {
 	return len(m.visibleItems())
+}
+
+// totalMatchingCount returns the total number of matching real items
+// (excludes "Create new").
+func (m Model) totalMatchingCount() int {
+	return len(m.allMatchingIndices())
 }
 
 // clampCursor ensures cursor doesn't exceed the visible item count.
@@ -362,6 +430,21 @@ func clampCursor(cursor, visibleCount int) int {
 		return max
 	}
 	return cursor
+}
+
+// clampOffset ensures offset doesn't scroll past the end of the list.
+func clampOffset(offset, totalMatching, maxVisible int) int {
+	if offset < 0 {
+		return 0
+	}
+	maxOffset := totalMatching - maxVisible
+	if maxOffset < 0 {
+		maxOffset = 0
+	}
+	if offset > maxOffset {
+		return maxOffset
+	}
+	return offset
 }
 
 func (m Model) updateConfirmDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -461,10 +544,12 @@ func (m Model) View() string {
 		}
 
 		// Scroll indicator
-		b.WriteString(m.viewScrollIndicator(visible))
+		b.WriteString(m.viewScrollIndicator())
 
-		// File tree preview of highlighted entry
-		b.WriteString(m.viewPreview(visible))
+		// File tree preview of highlighted entry (if enabled)
+		if m.previewEnabled {
+			b.WriteString(m.viewPreview(visible))
+		}
 	}
 
 	// Status bar
@@ -562,21 +647,35 @@ func (m Model) getGhostCompletion() string {
 }
 
 // viewScrollIndicator shows scroll hints when items exceed max_visible.
-func (m Model) viewScrollIndicator(visible []int) string {
-	// Count total matching items (excluding create-new)
-	totalMatching := 0
-	for _, it := range m.items {
-		if m.filter == "" || it.matched {
-			totalMatching++
-		}
+// Displays counts of items above and below the viewport.
+func (m Model) viewScrollIndicator() string {
+	total := m.totalMatchingCount()
+	realVisible := m.maxVisible
+	if m.hasCreateNew() {
+		realVisible--
 	}
-
-	if totalMatching <= m.maxVisible {
+	if total <= realVisible {
 		return ""
 	}
 
-	hidden := totalMatching - m.maxVisible
-	return m.styles.ScrollHint.Render(fmt.Sprintf("  ↕ %d more", hidden)) + "\n"
+	above := m.offset
+	below := total - m.offset - realVisible
+	if below < 0 {
+		below = 0
+	}
+
+	switch {
+	case above > 0 && below > 0:
+		return m.styles.ScrollHint.Render(
+			fmt.Sprintf("  ↑ %d above · ↓ %d below", above, below)) + "\n"
+	case above > 0:
+		return m.styles.ScrollHint.Render(
+			fmt.Sprintf("  ↑ %d above", above)) + "\n"
+	case below > 0:
+		return m.styles.ScrollHint.Render(
+			fmt.Sprintf("  ↓ %d below", below)) + "\n"
+	}
+	return ""
 }
 
 // viewPreview renders a file tree preview panel for the currently
@@ -644,9 +743,14 @@ func (m Model) viewStatusBar() string {
 	} else {
 		hints = append(hints, hint{"enter", "select"})
 	}
+	previewLabel := "preview on"
+	if !m.previewEnabled {
+		previewLabel = "preview off"
+	}
 	hints = append(hints,
 		hint{"ctrl-d", "delete"},
 		hint{"ctrl-r", "rename"},
+		hint{"ctrl-p", previewLabel},
 		hint{"esc", "quit"},
 	)
 
@@ -733,7 +837,7 @@ func (m Model) renderItem(it item, isSelected bool) string {
 	// Render columns based on theme config
 	columns := m.theme.Layout.Columns
 	if len(columns) == 0 {
-		columns = []string{"icon", "name", "date", "time"}
+		columns = []string{"icon", "date", "name", "time"}
 	}
 
 	for ci, col := range columns {

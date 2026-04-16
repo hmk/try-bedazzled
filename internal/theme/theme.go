@@ -163,7 +163,7 @@ func applyLayoutDefaults(l *Layout) {
 		}
 	}
 	if l.Columns == nil {
-		l.Columns = []string{"icon", "name", "date", "time"}
+		l.Columns = []string{"icon", "date", "name", "time"}
 	}
 	if l.SearchStyle == "" {
 		l.SearchStyle = "bordered"

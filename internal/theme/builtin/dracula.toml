@@ -21,6 +21,6 @@ max_visible  = 12
 show_icons   = true
 show_date    = "right"
 show_time    = true
-columns      = ["icon", "name", "date", "time"]
+columns      = ["icon", "date", "name", "time"]
 search_style = "bordered"
 selected_bg  = true
