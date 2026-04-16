@@ -115,8 +115,8 @@ func TestThemePickerViewContainsThemeNames(t *testing.T) {
 	m := NewThemePicker()
 	view := m.View()
 
-	if !strings.Contains(view, "default") {
-		t.Error("view should show 'default' theme")
+	if !strings.Contains(view, "bedazzled") {
+		t.Error("view should show 'bedazzled' theme")
 	}
 	if !strings.Contains(view, "catppuccin") {
 		t.Error("view should show 'catppuccin' theme")

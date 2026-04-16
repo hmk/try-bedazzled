@@ -22,6 +22,7 @@ max_visible  = 12
 show_icons   = false
 show_date    = "inline"
 show_time    = false
+show_score   = false
 columns      = ["name", "date"]
 search_style = "minimal"
 selected_bg  = false

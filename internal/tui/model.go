@@ -3,6 +3,7 @@ package tui
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -475,6 +476,21 @@ func (m Model) updateConfirmDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// rainbowCursor returns the themed cursor glyph, colored along a rainbow arc
+// when the active theme opts in (bedazzled). rowIndex lets each visible row
+// pick a different hue so the cursor shifts as the user scrolls.
+func (m Model) rainbowCursor(rowIndex int) string {
+	sym := m.styles.Symbols.Cursor
+	if !m.theme.Layout.Rainbow {
+		return m.styles.Cursor.Render(sym)
+	}
+	hue := math.Mod(float64(rowIndex)*47.0, 360.0)
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color(hsl2hex(hue, 0.8, 0.6))).
+		Bold(true).
+		Render(sym)
+}
+
 // Done returns true if the user has made a selection.
 func (m Model) Done() bool {
 	return m.done
@@ -526,25 +542,27 @@ func (m Model) View() string {
 			isSelected := row == m.cursor
 
 			if idx == -1 {
-				// "Create new" virtual entry
+				// "Create new" virtual entry — preview the content-aware icon
+				// so the user sees which emoji the new directory will get.
 				slug, _ := dirs.NormalizeDirName(m.filter)
 				name := dirs.FormatName(time.Now(), slug)
-				sym := m.styles.Symbols.Created
-				if sym == "" {
-					sym = "+"
+				fallback := m.styles.Symbols.Created
+				if fallback == "" {
+					fallback = "+"
 				}
+				icon := theme.LookupIcon(slug, fallback, m.customIcons)
 				if isSelected {
 					cursor := m.styles.Cursor.Render(m.styles.Symbols.Cursor)
-					b.WriteString(m.styles.Success.Render(fmt.Sprintf("%s %s Create new: %s", cursor, sym, name)))
+					b.WriteString(m.styles.Success.Render(fmt.Sprintf("%s %s Create new: %s", cursor, icon, name)))
 				} else {
-					b.WriteString(m.styles.Success.Render(fmt.Sprintf("  %s Create new: %s", sym, name)))
+					b.WriteString(m.styles.Success.Render(fmt.Sprintf("  %s Create new: %s", icon, name)))
 				}
 				b.WriteString("\n")
 				continue
 			}
 
 			it := m.items[idx]
-			line := m.renderItem(it, isSelected)
+			line := m.renderItem(it, isSelected, row)
 			b.WriteString(line)
 			b.WriteString("\n")
 		}
@@ -601,7 +619,17 @@ func (m Model) viewSearchBar() string {
 		countLabel = m.styles.Dim.Render(fmt.Sprintf(" %d matches", matchCount))
 	}
 
-	rule := m.styles.Dim.Render(" ─────────────────────────────────────────")
+	// Rule width adapts to the terminal, with a sensible fallback.
+	ruleChars := 41
+	if m.width > 4 {
+		ruleChars = m.width - 2
+	}
+	var rule string
+	if m.theme.Layout.Rainbow {
+		rule = rainbowRule(ruleChars)
+	} else {
+		rule = " " + m.styles.Dim.Render(strings.Repeat("─", ruleChars))
+	}
 
 	switch m.theme.Layout.SearchStyle {
 	case "bordered":
@@ -720,11 +748,18 @@ func (m Model) viewPreview(visible []int) string {
 	}
 	title := fmt.Sprintf(" %s%s ", icon, entry.Name)
 
-	// Bordered box with title in the top border
+	// Preview box spans most of the terminal width — 2-col gutter + 2 for
+	// the box borders. Falls back to a reasonable default pre-WindowSizeMsg.
+	boxWidth := m.width - 4
+	if boxWidth < 40 {
+		boxWidth = 40
+	}
+
 	box := m.styles.ConfirmBox.
 		UnsetBorderForeground().
 		BorderForeground(lipgloss.Color("#555")).
 		Padding(0, 1).
+		Width(boxWidth).
 		Render(tree)
 
 	return title + "\n" + box + "\n"
@@ -815,14 +850,17 @@ func (m Model) viewRename(b *strings.Builder) string {
 }
 
 // renderItem renders a single directory entry with column-based layout.
-func (m Model) renderItem(it item, isSelected bool) string {
-	var b strings.Builder
+// Left-side columns (icon, date, name) render first; the "time" (and optional
+// fuzzy score) are right-aligned to the terminal width — matching tobi/try-cli's
+// `"3h ago, 18.5"` tail format.
+func (m Model) renderItem(it item, isSelected bool, rowIndex int) string {
+	var left strings.Builder
 
 	// Cursor or indent
 	if isSelected {
-		b.WriteString(m.styles.Cursor.Render(m.styles.Symbols.Cursor) + " ")
+		left.WriteString(m.rainbowCursor(rowIndex) + " ")
 	} else {
-		b.WriteString("  ")
+		left.WriteString("  ")
 	}
 
 	name := it.entry.Name
@@ -843,16 +881,21 @@ func (m Model) renderItem(it item, isSelected bool) string {
 		matchSet[pos] = true
 	}
 
-	// Render columns based on theme config
+	// Render columns based on theme config (left side only — no "time" here)
 	columns := m.theme.Layout.Columns
 	if len(columns) == 0 {
-		columns = []string{"icon", "date", "name", "time"}
+		columns = []string{"icon", "date", "name"}
 	}
 
-	for ci, col := range columns {
-		if ci > 0 {
-			b.WriteString(" ")
+	wroteAny := false
+	for _, col := range columns {
+		if col == "time" {
+			continue // time renders right-aligned below
 		}
+		if wroteAny {
+			left.WriteString(" ")
+		}
+		wroteAny = true
 
 		switch col {
 		case "icon":
@@ -862,38 +905,77 @@ func (m Model) renderItem(it item, isSelected bool) string {
 					if sym == "" {
 						sym = "x"
 					}
-					b.WriteString(m.styles.Danger.Render(sym))
+					left.WriteString(m.styles.Danger.Render(sym))
 				} else {
-					// Look up content-aware icon from slug, fall back to theme default
 					icon := theme.LookupIcon(slugPart, m.styles.Symbols.Folder, m.customIcons)
 					if icon != "" {
-						b.WriteString(icon)
+						left.WriteString(icon)
 					}
 				}
 			}
 
 		case "name":
-			m.renderName(&b, it, isSelected, slugPart, hasDate, name, matchSet)
+			m.renderName(&left, it, isSelected, slugPart, hasDate, name, matchSet)
 
 		case "date":
 			if datePart != "" && m.theme.Layout.ShowDate != "hide" {
-				b.WriteString(m.styles.Dim.Render(datePart))
-			}
-
-		case "time":
-			if m.theme.Layout.ShowTime {
-				relTime := dirs.FormatRelativeTime(it.entry.Mtime)
-				b.WriteString(m.styles.TimeText.Render(relTime))
+				left.WriteString(m.styles.Dim.Render(datePart))
 			}
 		}
 	}
 
 	// Delete marker (if no icon column showed it)
 	if it.markedDelete && !m.theme.Layout.ShowIcons {
-		b.WriteString(" " + m.styles.Danger.Render(m.styles.Symbols.Deleted))
+		left.WriteString(" " + m.styles.Danger.Render(m.styles.Symbols.Deleted))
 	}
 
-	return b.String()
+	leftStr := left.String()
+
+	// Right-aligned tail: "3h ago" [, "12.4"]
+	var tail string
+	if m.theme.Layout.ShowTime {
+		rel := dirs.FormatRelativeTime(it.entry.Mtime)
+		if m.theme.Layout.ShowScore {
+			tail = fmt.Sprintf("%s, %.1f", rel, it.score)
+		} else {
+			tail = rel
+		}
+	} else if m.theme.Layout.ShowScore {
+		tail = fmt.Sprintf("%.1f", it.score)
+	}
+
+	if tail == "" {
+		return leftStr
+	}
+
+	// Pad the middle with spaces so the tail hits the right edge.
+	width := m.width
+	if width <= 0 {
+		width = 80 // sensible fallback when we haven't gotten a WindowSizeMsg yet
+	}
+	leftWidth := lipgloss.Width(leftStr)
+	tailWidth := lipgloss.Width(tail)
+	gap := width - leftWidth - tailWidth - 1 // 1-col right margin
+	if gap < 2 {
+		gap = 2 // never collide
+	}
+
+	return leftStr + strings.Repeat(" ", gap) + m.styles.TimeText.Render(tail)
+}
+
+// matchChar renders a single matched character — rainbow-hued when the theme
+// opts in (each character gets a position-derived hue), otherwise the theme's
+// Match style.
+func (m Model) matchChar(ch string, matchPos int) string {
+	if !m.theme.Layout.Rainbow {
+		return m.styles.Match.Render(ch)
+	}
+	// Step the hue by a prime-ish offset so consecutive matches don't blur.
+	hue := math.Mod(float64(matchPos)*61.0, 360.0)
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color(hsl2hex(hue, 0.85, 0.62))).
+		Bold(true).
+		Render(ch)
 }
 
 // renderName renders the name/slug portion with fuzzy highlights.
@@ -902,12 +984,14 @@ func (m Model) renderName(b *strings.Builder, it item, isSelected bool, slugPart
 
 	if showDate == "inline" && hasDate {
 		// Inline: render full name with date dimmed
+		matchIdx := 0
 		for i, ch := range fullName {
 			char := string(ch)
 			if it.markedDelete {
 				b.WriteString(m.styles.Danger.Render(char))
 			} else if matchSet[i] {
-				b.WriteString(m.styles.Match.Render(char))
+				b.WriteString(m.matchChar(char, matchIdx))
+				matchIdx++
 			} else if i < dirs.DatePrefixLen {
 				b.WriteString(m.styles.Dim.Render(char))
 			} else if isSelected {
@@ -923,13 +1007,15 @@ func (m Model) renderName(b *strings.Builder, it item, isSelected bool, slugPart
 			offset = dirs.DatePrefixLen
 		}
 
+		matchIdx := 0
 		for i, ch := range slugPart {
 			char := string(ch)
 			origIdx := i + offset
 			if it.markedDelete {
 				b.WriteString(m.styles.Danger.Render(char))
 			} else if matchSet[origIdx] {
-				b.WriteString(m.styles.Match.Render(char))
+				b.WriteString(m.matchChar(char, matchIdx))
+				matchIdx++
 			} else if isSelected {
 				b.WriteString(m.styles.Selected.Render(char))
 			} else {

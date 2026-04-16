@@ -15,10 +15,14 @@ func TestBuiltinNames(t *testing.T) {
 	}
 
 	expected := map[string]bool{
-		"default":    false,
+		"bedazzled":  false,
 		"catppuccin": false,
 		"dracula":    false,
 		"minimal":    false,
+	}
+
+	if names[0] != "bedazzled" {
+		t.Errorf("bedazzled should be first in the list, got %q first (full list: %v)", names[0], names)
 	}
 
 	for _, name := range names {
@@ -37,14 +41,14 @@ func TestBuiltinNames(t *testing.T) {
 // --- LoadBuiltin ---
 
 func TestLoadBuiltinDefault(t *testing.T) {
-	theme, err := LoadBuiltin("default")
+	theme, err := LoadBuiltin(DefaultThemeName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify some key values from default.toml
-	if theme.Colors.Accent != "#7C3AED" {
-		t.Errorf("accent = %q, want #7C3AED", theme.Colors.Accent)
+	// Verify some key values from bedazzled.toml
+	if theme.Colors.Accent != "#FF2D95" {
+		t.Errorf("accent = %q, want #FF2D95", theme.Colors.Accent)
 	}
 	if theme.Colors.Match != "#FACC15" {
 		t.Errorf("match = %q, want #FACC15", theme.Colors.Match)
@@ -56,19 +60,22 @@ func TestLoadBuiltinDefault(t *testing.T) {
 		t.Errorf("max_visible = %d, want 12", theme.Layout.MaxVisible)
 	}
 	if !theme.Layout.ShowIcons {
-		t.Error("show_icons should be true for default theme")
+		t.Error("show_icons should be true for bedazzled theme")
 	}
 	if theme.Layout.ShowDate != "right" {
 		t.Errorf("show_date = %q, want right", theme.Layout.ShowDate)
 	}
 	if !theme.Layout.ShowTime {
-		t.Error("show_time should be true for default theme")
+		t.Error("show_time should be true for bedazzled theme")
+	}
+	if !theme.Layout.Rainbow {
+		t.Error("rainbow should be true for bedazzled theme")
 	}
 	if theme.Layout.SearchStyle != "bordered" {
 		t.Errorf("search_style = %q, want bordered", theme.Layout.SearchStyle)
 	}
-	if len(theme.Layout.Columns) != 4 {
-		t.Errorf("expected 4 columns, got %d", len(theme.Layout.Columns))
+	if len(theme.Layout.Columns) != 3 {
+		t.Errorf("expected 3 columns, got %d", len(theme.Layout.Columns))
 	}
 	if theme.Symbols.Folder != "📂" {
 		t.Errorf("folder = %q, want 📂", theme.Symbols.Folder)
@@ -323,15 +330,15 @@ func TestResolveConfigTheme(t *testing.T) {
 
 func TestResolveDefaultFallback(t *testing.T) {
 	theme := Resolve(false, "")
-	if theme.Colors.Accent != "#7C3AED" {
-		t.Errorf("default fallback should load default theme, got accent=%q", theme.Colors.Accent)
+	if theme.Colors.Accent != "#FF2D95" {
+		t.Errorf("default fallback should load bedazzled theme, got accent=%q", theme.Colors.Accent)
 	}
 }
 
 func TestResolveUnknownThemeFallsBackToDefault(t *testing.T) {
 	theme := Resolve(false, "nonexistent-theme-xyz")
-	if theme.Colors.Accent != "#7C3AED" {
-		t.Errorf("unknown theme should fall back to default, got accent=%q", theme.Colors.Accent)
+	if theme.Colors.Accent != "#FF2D95" {
+		t.Errorf("unknown theme should fall back to bedazzled, got accent=%q", theme.Colors.Accent)
 	}
 }
 

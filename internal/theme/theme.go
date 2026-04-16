@@ -13,9 +13,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/BurntSushi/toml"
 )
+
+// DefaultThemeName is the name of the theme used when no override is set.
+const DefaultThemeName = "bedazzled"
 
 //go:embed builtin/*.toml
 var embeddedThemes embed.FS
@@ -64,6 +68,14 @@ type Layout struct {
 	// SelectedBg enables a subtle background highlight on the selected row.
 	SelectedBg bool `toml:"selected_bg"`
 
+	// Rainbow turns on per-character rainbow rendering for the search bar
+	// rules, the selected-row cursor, and fuzzy-match highlights.
+	Rainbow bool `toml:"rainbow"`
+
+	// ShowScore appends the fuzzy match score after the relative time,
+	// matching tobi/try-cli's "3h ago, 18.5" right-column format.
+	ShowScore bool `toml:"show_score"`
+
 	// Deprecated: use ShowDate instead. Kept for backward compatibility.
 	ShowDatePrefix bool `toml:"show_date_prefix"`
 }
@@ -75,9 +87,9 @@ type Theme struct {
 	Layout  Layout  `toml:"layout"`
 }
 
-// Default returns the built-in default theme.
+// Default returns the built-in default theme (bedazzled).
 func Default() Theme {
-	t, _ := LoadBuiltin("default")
+	t, _ := LoadBuiltin(DefaultThemeName)
 	return t
 }
 
@@ -97,14 +109,18 @@ func NoColor() Theme {
 			ShowIcons:   false,
 			ShowDate:    "inline",
 			ShowTime:    false,
+			ShowScore:   false,
 			Columns:     []string{"name", "date"},
 			SearchStyle: "minimal",
 			SelectedBg:  false,
+			Rainbow:     false,
 		},
 	}
 }
 
 // BuiltinNames returns the names of all embedded built-in themes.
+// The default theme ("bedazzled") is pinned to the first position;
+// the rest are sorted alphabetically so the list is deterministic.
 func BuiltinNames() []string {
 	entries, err := embeddedThemes.ReadDir("builtin")
 	if err != nil {
@@ -116,11 +132,19 @@ func BuiltinNames() []string {
 			continue
 		}
 		name := e.Name()
-		// Strip .toml extension
 		if len(name) > 5 && name[len(name)-5:] == ".toml" {
 			names = append(names, name[:len(name)-5])
 		}
 	}
+	sort.SliceStable(names, func(i, j int) bool {
+		if names[i] == DefaultThemeName {
+			return true
+		}
+		if names[j] == DefaultThemeName {
+			return false
+		}
+		return names[i] < names[j]
+	})
 	return names
 }
 

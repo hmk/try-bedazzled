@@ -100,10 +100,10 @@ Four built-in themes, switchable live with `try theme`:
 
 | Theme | Description |
 |---|---|
-| `default` | Purple accents, clean and modern |
+| `bedazzled` *(default)* | Rainbow search rules, shifting cursor hues, rainbow fuzzy hits |
 | `catppuccin` | Catppuccin Mocha pastels |
 | `dracula` | Dark and saturated |
-| `minimal` | Gruvbox-ish, ASCII-safe |
+| `minimal` | ASCII-safe, no unicode — good for CI and accessibility |
 
 Set in config or override per-session:
 
@@ -188,7 +188,7 @@ Full config reference:
 # ~/.config/try/config.toml
 
 tries_path      = "~/tries"          # where your directories live
-theme           = "default"          # built-in or custom theme name
+theme           = "bedazzled"        # built-in or custom theme name
 display_mode    = "inline"           # "inline" | "fullscreen" (alt screen)
 inline_min_rows = 15                 # minimum rows in inline mode
 preview_enabled = true               # file-tree preview panel

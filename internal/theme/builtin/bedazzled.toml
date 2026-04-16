@@ -1,0 +1,29 @@
+# bedazzled — rainbow and ridiculous
+# The default try theme: rainbow search rules, shifting cursor hues, and rainbow fuzzy hits.
+# Pick a calmer theme (catppuccin, dracula, minimal) if this is too much.
+
+[colors]
+accent  = "#FF2D95"   # hot pink — used when rainbow isn't active
+dim     = "#6B7280"   # slate — dates, secondary text
+text    = "#F5F3FF"   # near-white with violet tint
+match   = "#FACC15"   # yellow (overridden per-char when rainbow = true)
+danger  = "#EF4444"   # Delete confirmation
+success = "#10B981"   # Creation
+bg      = ""          # Empty = transparent (terminal default)
+
+[symbols]
+cursor  = "▸"
+created = "✦"
+deleted = "✗"
+folder  = "📂"
+
+[layout]
+max_visible  = 12
+show_icons   = true
+show_date    = "right"
+show_time    = true
+show_score   = true
+columns      = ["icon", "date", "name"]
+search_style = "bordered"
+selected_bg  = true
+rainbow      = true
