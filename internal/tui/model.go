@@ -56,18 +56,26 @@ type item struct {
 // Model is the Bubble Tea model for the selector TUI.
 type Model struct {
 	// Config
-	basePath string
-	styles   Styles
-	theme    theme.Theme
+	basePath    string
+	styles      Styles
+	theme       theme.Theme
+	customIcons map[string]string // User-defined slug→icon overrides
 
 	// State
 	items       []item
 	allEntries  []dirs.Entry
 	filter      string
 	cursor      int
+	offset      int // Index of first visible item for scrolling
 	mode        Mode
 	renameInput string
 	renameIdx   int // index of item being renamed
+
+	// Preference state
+	previewEnabled bool
+
+	// Callbacks (for persisting preferences that change at runtime)
+	onPreviewToggle func(bool)
 
 	// Output
 	result Result
@@ -80,20 +88,30 @@ type Model struct {
 }
 
 // New creates a new selector Model.
-func New(basePath string, entries []dirs.Entry, initialFilter string, t theme.Theme) Model {
+// cfg provides user preferences (custom icons, preview enabled, etc.).
+// Pass theme.Config{} for defaults.
+func New(basePath string, entries []dirs.Entry, initialFilter string, t theme.Theme, cfg theme.Config) Model {
 	m := Model{
-		basePath:   basePath,
-		allEntries: entries,
-		filter:     initialFilter,
-		styles:     NewStyles(t),
-		theme:      t,
-		maxVisible: t.Layout.MaxVisible,
+		basePath:       basePath,
+		allEntries:     entries,
+		filter:         initialFilter,
+		styles:         NewStyles(t),
+		theme:          t,
+		customIcons:    cfg.CustomIcons,
+		previewEnabled: cfg.GetPreviewEnabled(),
+		maxVisible:     t.Layout.MaxVisible,
 	}
 	if m.maxVisible == 0 {
 		m.maxVisible = 12
 	}
 	m.items = buildItems(m.allEntries, m.filter)
 	return m
+}
+
+// SetPreviewToggleCallback sets a function that's called whenever the user
+// toggles the preview panel. Used to persist the state to config.
+func (m *Model) SetPreviewToggleCallback(fn func(bool)) {
+	m.onPreviewToggle = fn
 }
 
 // Init implements tea.Model.
@@ -588,7 +606,7 @@ func (m Model) viewPreview(visible []int) string {
 		if _, s, ok := dirs.ParseDatePrefix(entry.Name); ok {
 			slug = s
 		}
-		icon = theme.LookupIcon(slug, m.styles.Symbols.Folder)
+		icon = theme.LookupIcon(slug, m.styles.Symbols.Folder, m.customIcons)
 		if icon != "" {
 			icon += " "
 		}
@@ -734,7 +752,7 @@ func (m Model) renderItem(it item, isSelected bool) string {
 					b.WriteString(m.styles.Danger.Render(sym))
 				} else {
 					// Look up content-aware icon from slug, fall back to theme default
-					icon := theme.LookupIcon(slugPart, m.styles.Symbols.Folder)
+					icon := theme.LookupIcon(slugPart, m.styles.Symbols.Folder, m.customIcons)
 					if icon != "" {
 						b.WriteString(icon)
 					}

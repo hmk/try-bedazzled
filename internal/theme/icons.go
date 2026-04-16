@@ -54,11 +54,28 @@ var IconRegistry = map[string]string{
 }
 
 // LookupIcon returns the best icon for a directory slug.
-// Checks each word in the slug (split by hyphens) against the registry.
-// Returns the theme's default folder icon if no match is found.
-func LookupIcon(slug string, fallback string) string {
+// Checks each hyphen-separated word in the slug, with priority:
+//  1. user custom map (passed in)
+//  2. built-in IconRegistry
+//  3. fallback (typically the theme's Symbols.Folder)
+//
+// custom may be nil. Keys in both maps are lower-cased for comparison.
+func LookupIcon(slug string, fallback string, custom map[string]string) string {
 	parts := strings.Split(strings.ToLower(slug), "-")
+
+	// Pre-lowercase custom map keys once for case-insensitive lookup
+	var customLower map[string]string
+	if len(custom) > 0 {
+		customLower = make(map[string]string, len(custom))
+		for k, v := range custom {
+			customLower[strings.ToLower(k)] = v
+		}
+	}
+
 	for _, part := range parts {
+		if icon, ok := customLower[part]; ok {
+			return icon
+		}
 		if icon, ok := IconRegistry[part]; ok {
 			return icon
 		}

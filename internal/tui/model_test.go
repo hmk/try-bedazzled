@@ -21,7 +21,7 @@ var (
 )
 
 func newTestModel(filter string) Model {
-	return New("/tries", entries, filter, theme.Default())
+	return New("/tries", entries, filter, theme.Default(), theme.Config{})
 }
 
 func sendKeys(m Model, keys ...string) Model {
@@ -471,7 +471,7 @@ func TestViewGhostAutocomplete(t *testing.T) {
 }
 
 func TestViewEmptyState(t *testing.T) {
-	m := New("/tries", nil, "", theme.Default())
+	m := New("/tries", nil, "", theme.Default(), theme.Config{})
 	view := m.View()
 
 	if !strings.Contains(view, "No tries yet") {

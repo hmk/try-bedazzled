@@ -105,8 +105,13 @@ func runSelector(triesPath, initialFilter, andKeys string, andExit bool) error {
 	cfg, _ := theme.LoadConfig()
 	t := theme.Resolve(noColors, cfg.Theme)
 
-	// Create model
-	m := tui.New(triesPath, scanResult.Entries, initialFilter, t)
+	// Create model with config for custom icons, preview pref, etc.
+	m := tui.New(triesPath, scanResult.Entries, initialFilter, t, cfg)
+
+	// Wire preview toggle to persist state to config
+	m.SetPreviewToggleCallback(func(enabled bool) {
+		_ = theme.SetPreviewEnabled(enabled)
+	})
 
 	// If test mode with key injection, send keys programmatically
 	if andKeys != "" {

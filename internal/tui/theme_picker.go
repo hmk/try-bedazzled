@@ -227,7 +227,7 @@ func renderPreview(t theme.Theme) string {
 		if _, s, ok := dirs.ParseDatePrefix(name); ok {
 			slug = s
 		}
-		icon := theme.LookupIcon(slug, styles.Symbols.Folder)
+		icon := theme.LookupIcon(slug, styles.Symbols.Folder, nil)
 		if icon != "" && t.Layout.ShowIcons {
 			b.WriteString(icon + " ")
 		}
