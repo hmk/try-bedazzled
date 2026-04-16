@@ -8,6 +8,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/hmk/try-bedazzled/internal/dirs"
 	"github.com/hmk/try-bedazzled/internal/fuzzy"
 	"github.com/hmk/try-bedazzled/internal/theme"
@@ -443,6 +444,9 @@ func (m Model) View() string {
 
 		// Scroll indicator
 		b.WriteString(m.viewScrollIndicator(visible))
+
+		// File tree preview of highlighted entry
+		b.WriteString(m.viewPreview(visible))
 	}
 
 	// Status bar
@@ -555,6 +559,50 @@ func (m Model) viewScrollIndicator(visible []int) string {
 
 	hidden := totalMatching - m.maxVisible
 	return m.styles.ScrollHint.Render(fmt.Sprintf("  ↕ %d more", hidden)) + "\n"
+}
+
+// viewPreview renders a file tree preview panel for the currently
+// highlighted directory entry. Returns "" when no real entry is
+// highlighted (e.g. on the "Create new" virtual item).
+func (m Model) viewPreview(visible []int) string {
+	if m.cursor >= len(visible) {
+		return ""
+	}
+	idx := visible[m.cursor]
+	if idx == -1 {
+		// "Create new" — no preview
+		return ""
+	}
+	entry := m.items[idx].entry
+
+	// Render tree (cap at 8 lines, depth 2)
+	tree := RenderFileTree(entry.Path, 2, 8, m.styles)
+	if tree == "" {
+		tree = m.styles.Dim.Render("  (empty)")
+	}
+
+	// Icon + name for the title
+	icon := ""
+	if m.theme.Layout.ShowIcons {
+		slug := entry.Name
+		if _, s, ok := dirs.ParseDatePrefix(entry.Name); ok {
+			slug = s
+		}
+		icon = theme.LookupIcon(slug, m.styles.Symbols.Folder)
+		if icon != "" {
+			icon += " "
+		}
+	}
+	title := fmt.Sprintf(" %s%s ", icon, entry.Name)
+
+	// Bordered box with title in the top border
+	box := m.styles.ConfirmBox.
+		UnsetBorderForeground().
+		BorderForeground(lipgloss.Color("#555")).
+		Padding(0, 1).
+		Render(tree)
+
+	return title + "\n" + box + "\n"
 }
 
 // viewStatusBar renders context-sensitive key hints.

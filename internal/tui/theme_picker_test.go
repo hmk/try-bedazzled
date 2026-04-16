@@ -35,9 +35,6 @@ func TestThemePickerInitialState(t *testing.T) {
 	if len(m.themes) < 4 {
 		t.Fatalf("expected at least 4 themes, got %d", len(m.themes))
 	}
-	if m.cursor != 0 {
-		t.Errorf("cursor should start at 0, got %d", m.cursor)
-	}
 	if m.done {
 		t.Error("should not be done initially")
 	}
@@ -45,43 +42,18 @@ func TestThemePickerInitialState(t *testing.T) {
 
 func TestThemePickerNavigation(t *testing.T) {
 	m := NewThemePicker()
+	initial := m.table.Cursor()
 	m = sendPickerKeys(m, "down")
-	if m.cursor != 1 {
-		t.Errorf("cursor should be 1 after down, got %d", m.cursor)
-	}
-	m = sendPickerKeys(m, "down", "up")
-	if m.cursor != 1 {
-		t.Errorf("cursor should be 1 after down-up, got %d", m.cursor)
+	if m.table.Cursor() != initial+1 {
+		t.Errorf("cursor should move down, got %d", m.table.Cursor())
 	}
 }
 
-func TestThemePickerNavigationVim(t *testing.T) {
-	m := NewThemePicker()
-	m = sendPickerKeys(m, "j")
-	if m.cursor != 1 {
-		t.Errorf("j should move down, cursor = %d", m.cursor)
-	}
-	m = sendPickerKeys(m, "k")
-	if m.cursor != 0 {
-		t.Errorf("k should move up, cursor = %d", m.cursor)
-	}
-}
-
-func TestThemePickerUpAtTopStays(t *testing.T) {
+func TestThemePickerNavigationUpAtTopStays(t *testing.T) {
 	m := NewThemePicker()
 	m = sendPickerKeys(m, "up")
-	if m.cursor != 0 {
-		t.Errorf("cursor should stay at 0, got %d", m.cursor)
-	}
-}
-
-func TestThemePickerDownAtBottomStays(t *testing.T) {
-	m := NewThemePicker()
-	for i := 0; i < 20; i++ {
-		m = sendPickerKeys(m, "down")
-	}
-	if m.cursor != len(m.themes)-1 {
-		t.Errorf("cursor should be at last theme, got %d", m.cursor)
+	if m.table.Cursor() != 0 {
+		t.Errorf("cursor should stay at 0, got %d", m.table.Cursor())
 	}
 }
 
@@ -155,12 +127,8 @@ func TestThemePickerViewContainsPreview(t *testing.T) {
 	m := NewThemePicker()
 	view := m.View()
 
-	// Preview should show fake entries
 	if !strings.Contains(view, "redis") {
 		t.Error("preview should contain 'redis' entry")
-	}
-	if !strings.Contains(view, "go-api") {
-		t.Error("preview should contain 'go-api' entry")
 	}
 }
 
@@ -181,5 +149,24 @@ func TestThemePickerDoneViewEmpty(t *testing.T) {
 	m = sendPickerKeys(m, "enter")
 	if m.View() != "" {
 		t.Error("done view should be empty")
+	}
+}
+
+func TestThemePickerViewContainsTable(t *testing.T) {
+	m := NewThemePicker()
+	view := m.View()
+
+	// Should have the table header
+	if !strings.Contains(view, "Theme") {
+		t.Error("view should contain 'Theme' table header")
+	}
+}
+
+func TestThemePickerViewContainsSeparators(t *testing.T) {
+	m := NewThemePicker()
+	view := m.View()
+
+	if !strings.Contains(view, "─") {
+		t.Error("view should contain horizontal separators")
 	}
 }

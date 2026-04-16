@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hmk/try-bedazzled/internal/dirs"
@@ -20,13 +21,14 @@ type ThemePickerResult struct {
 
 // ThemePickerModel is the Bubble Tea model for the theme picker.
 type ThemePickerModel struct {
-	themes    []string // theme names
-	cursor    int
-	done      bool
-	result    ThemePickerResult
-	previews  map[string]theme.Theme // cached loaded themes
-	width     int
-	height    int
+	table       table.Model
+	tableStyles table.Styles
+	themes      []string // theme names in order
+	done        bool
+	result      ThemePickerResult
+	previews    map[string]theme.Theme
+	width       int
+	height      int
 }
 
 // NewThemePicker creates a new theme picker model.
@@ -40,9 +42,43 @@ func NewThemePicker() ThemePickerModel {
 		}
 	}
 
+	// Build table
+	columns := []table.Column{
+		{Title: "Theme", Width: 14},
+	}
+
+	rows := make([]table.Row, len(names))
+	for i, name := range names {
+		rows[i] = table.Row{name}
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows(rows),
+		table.WithFocused(true),
+		table.WithHeight(len(names)+1),
+	)
+
+	// Style the table
+	s := table.DefaultStyles()
+	s.Header = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#7C3AED")).
+		BorderBottom(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("#555"))
+	s.Selected = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#7C3AED"))
+	s.Cell = lipgloss.NewStyle().
+		PaddingLeft(1)
+	t.SetStyles(s)
+
 	return ThemePickerModel{
-		themes:   names,
-		previews: previews,
+		table:       t,
+		tableStyles: s,
+		themes:      names,
+		previews:    previews,
 	}
 }
 
@@ -59,20 +95,13 @@ func (m ThemePickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.done = true
 			return m, tea.Quit
 
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-
-		case "down", "j":
-			if m.cursor < len(m.themes)-1 {
-				m.cursor++
-			}
-
 		case "enter":
-			m.result = ThemePickerResult{
-				Selected: true,
-				Name:     m.themes[m.cursor],
+			cursor := m.table.Cursor()
+			if cursor >= 0 && cursor < len(m.themes) {
+				m.result = ThemePickerResult{
+					Selected: true,
+					Name:     m.themes[cursor],
+				}
 			}
 			m.done = true
 			return m, tea.Quit
@@ -83,7 +112,23 @@ func (m ThemePickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 	}
 
-	return m, nil
+	// Delegate to table for navigation
+	var cmd tea.Cmd
+	m.table, cmd = m.table.Update(msg)
+
+	// Update table selected style to match the previewed theme's accent
+	cursor := m.table.Cursor()
+	if cursor >= 0 && cursor < len(m.themes) {
+		t := m.previews[m.themes[cursor]]
+		if t.Colors.Accent != "" {
+			m.tableStyles.Selected = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color(t.Colors.Accent))
+			m.table.SetStyles(m.tableStyles)
+		}
+	}
+
+	return m, cmd
 }
 
 func (m ThemePickerModel) View() string {
@@ -94,37 +139,32 @@ func (m ThemePickerModel) View() string {
 	// Title
 	title := lipgloss.NewStyle().
 		Bold(true).
-		MarginBottom(1).
 		Render("  Pick a theme:")
 
-	// Build left pane: theme list
-	var left strings.Builder
-	for i, name := range m.themes {
-		if i == m.cursor {
-			cursor := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#7C3AED")).Render("▸")
-			label := lipgloss.NewStyle().Bold(true).Render(name)
-			left.WriteString(fmt.Sprintf("  %s %s\n", cursor, label))
-		} else {
-			left.WriteString(fmt.Sprintf("    %s\n", name))
-		}
+	// Top separator
+	sep := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#555")).
+		Render(" ─────────────────────────────────────────────────────────────")
+
+	// Left pane: Bubbles table
+	leftPane := lipgloss.NewStyle().
+		Width(18).
+		Render(m.table.View())
+
+	// Right pane: live preview
+	cursor := m.table.Cursor()
+	var preview string
+	if cursor >= 0 && cursor < len(m.themes) {
+		selectedTheme := m.previews[m.themes[cursor]]
+		preview = renderPreview(selectedTheme)
 	}
 
-	// Build right pane: live preview of the selected theme
-	selectedName := m.themes[m.cursor]
-	selectedTheme := m.previews[selectedName]
-	preview := renderPreview(selectedTheme)
-
-	// Layout: side by side
-	leftPane := lipgloss.NewStyle().
-		Width(20).
-		Render(left.String())
-
 	rightPane := lipgloss.NewStyle().
-		Width(40).
+		Width(48).
 		BorderLeft(true).
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("#555")).
-		PaddingLeft(2).
+		PaddingLeft(1).
 		Render(preview)
 
 	panes := lipgloss.JoinHorizontal(lipgloss.Top, leftPane, rightPane)
@@ -132,10 +172,9 @@ func (m ThemePickerModel) View() string {
 	// Status bar
 	status := lipgloss.NewStyle().
 		Faint(true).
-		MarginTop(1).
-		Render("  enter: apply  •  ↑/↓: browse  •  esc: cancel")
+		Render("  enter apply  •  ↑/↓ browse  •  esc cancel")
 
-	return title + "\n" + panes + "\n" + status
+	return title + "\n" + sep + "\n" + panes + "\n" + sep + "\n" + status
 }
 
 // Done returns true if the user has made a choice.
@@ -152,7 +191,6 @@ func (m ThemePickerModel) GetResult() ThemePickerResult {
 func renderPreview(t theme.Theme) string {
 	styles := NewStyles(t)
 
-	// Fake entries for preview
 	fakeEntries := []struct {
 		name   string
 		query  string
@@ -168,22 +206,34 @@ func renderPreview(t theme.Theme) string {
 	now := time.Now()
 	var b strings.Builder
 
-	// Search bar
-	b.WriteString(styles.Cursor.Render(styles.Symbols.Cursor))
-	b.WriteString(" redis\n")
+	// Search bar preview (simple, with top/bottom lines)
+	searchLine := styles.Dim.Render("─────────────────────────────────────")
+	b.WriteString(" " + searchLine + "\n")
+	b.WriteString(" " + styles.Cursor.Render(styles.Symbols.Cursor) + " redis")
+	b.WriteString(styles.Dim.Render("                    3 matches"))
+	b.WriteString("\n")
+	b.WriteString(" " + searchLine + "\n")
 
 	for _, fe := range fakeEntries {
-		// Cursor or indent
 		if fe.cursor {
-			b.WriteString(styles.Cursor.Render(styles.Symbols.Cursor) + " ")
+			b.WriteString(" " + styles.Cursor.Render(styles.Symbols.Cursor) + " ")
 		} else {
-			b.WriteString("  ")
+			b.WriteString("   ")
 		}
 
-		// Render name with fuzzy highlights
-		mtime := now.Add(-fe.mtime)
+		// Icon
 		name := fe.name
+		slug := name
+		if _, s, ok := dirs.ParseDatePrefix(name); ok {
+			slug = s
+		}
+		icon := theme.LookupIcon(slug, styles.Symbols.Folder)
+		if icon != "" && t.Layout.ShowIcons {
+			b.WriteString(icon + " ")
+		}
 
+		// Name with fuzzy highlights
+		mtime := now.Add(-fe.mtime)
 		if fe.query != "" {
 			r := fuzzy.MatchAt(name, fe.query, mtime, now)
 			matchSet := make(map[int]bool)
@@ -192,12 +242,14 @@ func renderPreview(t theme.Theme) string {
 			}
 
 			hasDate := fuzzy.HasDatePrefix(name)
-			for i, ch := range name {
+			offset := 0
+			if hasDate {
+				offset = dirs.DatePrefixLen
+			}
+			for i, ch := range slug {
 				char := string(ch)
-				if matchSet[i] {
+				if matchSet[i+offset] {
 					b.WriteString(styles.Match.Render(char))
-				} else if hasDate && i < dirs.DatePrefixLen {
-					b.WriteString(styles.Dim.Render(char))
 				} else if fe.cursor {
 					b.WriteString(styles.Selected.Render(char))
 				} else {
@@ -205,23 +257,32 @@ func renderPreview(t theme.Theme) string {
 				}
 			}
 		} else {
-			hasDate := fuzzy.HasDatePrefix(name)
-			for i, ch := range name {
-				char := string(ch)
-				if hasDate && i < dirs.DatePrefixLen {
-					b.WriteString(styles.Dim.Render(char))
-				} else {
-					b.WriteString(styles.Normal.Render(char))
-				}
+			b.WriteString(styles.Normal.Render(slug))
+		}
+
+		// Date + time
+		if t.Layout.ShowDate != "hide" {
+			date := ""
+			if _, _, ok := dirs.ParseDatePrefix(name); ok {
+				date = name[:10]
 			}
+			if date != "" {
+				b.WriteString("  " + styles.Dim.Render(date))
+			}
+		}
+		if t.Layout.ShowTime {
+			b.WriteString("  " + styles.TimeText.Render(dirs.FormatRelativeTime(now.Add(-fe.mtime))))
 		}
 
 		b.WriteString("\n")
 	}
 
-	// Fake "Create new" line
-	b.WriteString("  ")
-	b.WriteString(styles.Success.Render(fmt.Sprintf("%s Create new: 2026-04-14-redis", styles.Symbols.Created)))
+	// Create new line
+	sym := styles.Symbols.Created
+	if sym == "" {
+		sym = "+"
+	}
+	b.WriteString("   " + styles.Success.Render(fmt.Sprintf("%s Create new: 2026-04-14-redis", sym)))
 
 	return b.String()
 }
