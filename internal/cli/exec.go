@@ -66,6 +66,9 @@ func newExecCmd() *cobra.Command {
 				case "theme":
 					// Run theme picker directly — it's not a selector query
 					return newThemeCmd().RunE(cmd, args[1:])
+				case "settings":
+					// Run settings menu directly
+					return newSettingsCmd().RunE(cmd, args[1:])
 				case "--help", "-h", "help":
 					return cmd.Root().Help()
 				case "--version", "-v":
@@ -118,8 +121,15 @@ func runSelector(triesPath, initialFilter, andKeys string, andExit bool) error {
 		return runWithInjectedKeys(m, andKeys, triesPath)
 	}
 
+	// Choose display mode from config
+	var programOpts []tea.ProgramOption
+	programOpts = append(programOpts, tea.WithOutput(os.Stderr))
+	if cfg.GetDisplayMode() == "fullscreen" {
+		programOpts = append(programOpts, tea.WithAltScreen())
+	}
+
 	// Run Bubble Tea program, rendering to /dev/tty (stderr)
-	p := tea.NewProgram(m, tea.WithOutput(os.Stderr))
+	p := tea.NewProgram(m, programOpts...)
 	finalModel, err := p.Run()
 	if err != nil {
 		return fmt.Errorf("TUI error: %w", err)
@@ -167,6 +177,12 @@ func handleResult(r tui.Result, triesPath string) error {
 		script = shell.BuildDeleteScript(triesPath, r.DeleteNames, cwd)
 	case tui.ActionRename:
 		script = shell.BuildRenameScript(triesPath, r.RenameOld, r.RenameNew)
+	case tui.ActionOpenSettings:
+		// Run the settings form in-process, then re-open the selector
+		if err := runSettings(); err != nil {
+			return err
+		}
+		return runSelector(triesPath, "", "", false)
 	case tui.ActionCancel:
 		fmt.Fprintln(os.Stderr, "Cancelled.")
 		return nil

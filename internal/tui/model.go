@@ -24,6 +24,7 @@ const (
 	ActionCancel
 	ActionDelete
 	ActionRename
+	ActionOpenSettings
 )
 
 // Result is the outcome of the TUI selector.
@@ -193,6 +194,11 @@ func (m Model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.onPreviewToggle != nil {
 			m.onPreviewToggle(m.previewEnabled)
 		}
+
+	case keyMatch(msg, "ctrl+,"):
+		m.result = Result{Action: ActionOpenSettings}
+		m.done = true
+		return m, tea.Quit
 
 	case keyMatch(msg, "backspace"):
 		if len(m.filter) > 0 {
@@ -595,21 +601,23 @@ func (m Model) viewSearchBar() string {
 		countLabel = m.styles.Dim.Render(fmt.Sprintf(" %d matches", matchCount))
 	}
 
+	rule := m.styles.Dim.Render(" ─────────────────────────────────────────")
+
 	switch m.theme.Layout.SearchStyle {
 	case "bordered":
-		// Bordered box with rounded corners
-		inner := content
+		// Top-and-bottom rules only (no left/right border)
+		line := " " + content
 		if countLabel != "" {
-			inner += "  " + countLabel
+			line += "  " + countLabel
 		}
-		return m.styles.SearchBox.Render(inner) + "\n"
+		return rule + "\n" + line + "\n" + rule + "\n"
 
 	case "underline":
 		line := content
 		if countLabel != "" {
 			line += "  " + countLabel
 		}
-		return line + "\n" + m.styles.Dim.Render(" ─────────────────────────────────────") + "\n"
+		return line + "\n" + rule + "\n"
 
 	default: // "minimal"
 		line := content
@@ -751,6 +759,7 @@ func (m Model) viewStatusBar() string {
 		hint{"ctrl-d", "delete"},
 		hint{"ctrl-r", "rename"},
 		hint{"ctrl-p", previewLabel},
+		hint{"ctrl-,", "settings"},
 		hint{"esc", "quit"},
 	)
 

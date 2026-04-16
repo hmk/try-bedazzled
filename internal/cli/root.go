@@ -45,6 +45,7 @@ Setup: eval "$(try init [path])" in your shell config.`,
 		newCloneCmd(),
 		newWorktreeCmd(),
 		newThemeCmd(),
+		newSettingsCmd(),
 	)
 
 	return root
