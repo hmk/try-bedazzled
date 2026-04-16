@@ -20,7 +20,7 @@ almost as fast as C, 15× faster than Ruby, and it actually has a TUI.
   🦀 2026-04-11  redis-rs-bench        3d ago
   📂 2026-04-09  redis-lua-scripts     5d ago
 ─────────────────────────────────────────
-  enter select  •  ctrl-d delete  •  ctrl-r rename  •  ctrl-p preview on  •  ctrl-, settings  •  esc quit
+  enter select  •  ctrl-d delete  •  ctrl-r rename  •  ctrl-p preview on  •  ctrl-g settings  •  esc quit
 ```
 
 Type to filter. Press Enter to `cd`. Type a new name and press Enter to create. That's it.
@@ -87,7 +87,7 @@ eval "$(try init ~/workspace/experiments)"
 | `Ctrl-D` | Mark/unmark entry for deletion |
 | `Ctrl-R` | Rename (preserves date prefix) |
 | `Ctrl-P` | Toggle file-tree preview panel |
-| `Ctrl-,` | Open settings menu |
+| `Ctrl-G` | Open settings menu |
 | `Esc` | Cancel |
 
 ---

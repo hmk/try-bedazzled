@@ -195,7 +195,7 @@ func (m Model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.onPreviewToggle(m.previewEnabled)
 		}
 
-	case keyMatch(msg, "ctrl+,"):
+	case keyMatch(msg, "ctrl+g"):
 		m.result = Result{Action: ActionOpenSettings}
 		m.done = true
 		return m, tea.Quit
@@ -759,7 +759,7 @@ func (m Model) viewStatusBar() string {
 		hint{"ctrl-d", "delete"},
 		hint{"ctrl-r", "rename"},
 		hint{"ctrl-p", previewLabel},
-		hint{"ctrl-,", "settings"},
+		hint{"ctrl-g", "settings"},
 		hint{"esc", "quit"},
 	)
 
