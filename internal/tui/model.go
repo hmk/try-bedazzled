@@ -94,6 +94,9 @@ type Model struct {
 // cfg provides user preferences (custom icons, preview enabled, etc.).
 // Pass theme.Config{} for defaults.
 func New(basePath string, entries []dirs.Entry, initialFilter string, t theme.Theme, cfg theme.Config) Model {
+	// User's show_emojis preference overrides the theme's ShowIcons default.
+	t.Layout.ShowIcons = t.Layout.ShowIcons && cfg.GetShowEmojis(t.Layout.ShowIcons)
+
 	m := Model{
 		basePath:       basePath,
 		allEntries:     entries,
