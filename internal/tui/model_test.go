@@ -513,3 +513,94 @@ func TestCursorClampsAfterFilter(t *testing.T) {
 		t.Errorf("cursor %d should be < visible count %d", m.cursor, m.visibleCount())
 	}
 }
+
+// --- Space-as-dash fuzzy query ---
+
+func TestFilterSpaceMatchesDash(t *testing.T) {
+	dashed := []dirs.Entry{
+		{Name: "2026-04-14-redis-cache", Path: "/t/2026-04-14-redis-cache", Mtime: now.Add(-1 * time.Hour)},
+		{Name: "2026-04-13-go-api", Path: "/t/2026-04-13-go-api", Mtime: now.Add(-24 * time.Hour)},
+	}
+	m := New("/t", dashed, "redis cache", theme.Default(), theme.Config{})
+
+	var matched []string
+	for _, it := range m.items {
+		if it.matched {
+			matched = append(matched, it.entry.Name)
+		}
+	}
+	if len(matched) == 0 || matched[0] != "2026-04-14-redis-cache" {
+		t.Errorf("expected `redis cache` to match redis-cache entry, got %v", matched)
+	}
+}
+
+func TestFilterSpaceMatchesDashSameAsDashed(t *testing.T) {
+	dashed := []dirs.Entry{
+		{Name: "2026-04-14-redis-cache", Path: "/t/2026-04-14-redis-cache", Mtime: now.Add(-1 * time.Hour)},
+	}
+	spaced := New("/t", dashed, "redis cache", theme.Default(), theme.Config{})
+	hyph := New("/t", dashed, "redis-cache", theme.Default(), theme.Config{})
+	// Recency uses wall-clock time.Now(), so scores can differ by a tiny epsilon.
+	diff := spaced.items[0].score - hyph.items[0].score
+	if diff < -1e-3 || diff > 1e-3 {
+		t.Errorf("space and dash queries should score (nearly) identically: space=%v dash=%v",
+			spaced.items[0].score, hyph.items[0].score)
+	}
+}
+
+func TestGhostCompletionAcceptsSpace(t *testing.T) {
+	dashed := []dirs.Entry{
+		{Name: "2026-04-14-redis-cache", Path: "/t/2026-04-14-redis-cache", Mtime: now.Add(-1 * time.Hour)},
+	}
+	m := New("/t", dashed, "redis ca", theme.Default(), theme.Config{})
+	if got := m.getGhostCompletion(); got != "che" {
+		t.Errorf("ghost completion for `redis ca` = %q, want \"che\"", got)
+	}
+}
+
+// --- Adaptive list height (fullscreen) ---
+
+func TestEffectiveMaxVisibleInlineUsesThemeCap(t *testing.T) {
+	m := newTestModel("")
+	m.height = 80
+	if got := m.effectiveMaxVisible(); got != m.maxVisible {
+		t.Errorf("inline effectiveMaxVisible = %d, want %d", got, m.maxVisible)
+	}
+}
+
+func TestEffectiveMaxVisibleFullscreenGrowsWithHeight(t *testing.T) {
+	m := New("/t", entries, "", theme.Default(), theme.Config{DisplayMode: "fullscreen"})
+	m.previewEnabled = false
+
+	m.height = 20
+	small := m.effectiveMaxVisible()
+	m.height = 60
+	big := m.effectiveMaxVisible()
+
+	if big <= small {
+		t.Errorf("fullscreen effectiveMaxVisible should grow with height: small=%d big=%d", small, big)
+	}
+}
+
+func TestEffectiveMaxVisibleShrinksWhenPreviewOn(t *testing.T) {
+	m := New("/t", entries, "", theme.Default(), theme.Config{DisplayMode: "fullscreen"})
+	m.height = 60
+
+	m.previewEnabled = false
+	off := m.effectiveMaxVisible()
+	m.previewEnabled = true
+	on := m.effectiveMaxVisible()
+
+	if off <= on {
+		t.Errorf("fullscreen list should be larger with preview off: off=%d on=%d", off, on)
+	}
+}
+
+func TestEffectiveMaxVisibleFloorsAtFive(t *testing.T) {
+	m := New("/t", entries, "", theme.Default(), theme.Config{DisplayMode: "fullscreen"})
+	m.previewEnabled = true
+	m.height = 5
+	if got := m.effectiveMaxVisible(); got < 5 {
+		t.Errorf("effectiveMaxVisible floor should be >= 5, got %d", got)
+	}
+}

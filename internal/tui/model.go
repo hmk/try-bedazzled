@@ -85,6 +85,7 @@ type Model struct {
 
 	// Layout
 	maxVisible int
+	fullscreen bool
 	width      int
 	height     int
 }
@@ -102,6 +103,7 @@ func New(basePath string, entries []dirs.Entry, initialFilter string, t theme.Th
 		customIcons:    cfg.CustomIcons,
 		previewEnabled: cfg.GetPreviewEnabled(),
 		maxVisible:     t.Layout.MaxVisible,
+		fullscreen:     cfg.GetDisplayMode() == "fullscreen",
 	}
 	if m.maxVisible == 0 {
 		m.maxVisible = 12
@@ -168,7 +170,7 @@ func (m Model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			// Only real items scroll (the "Create new" virtual entry
 			// stays pinned at the bottom of the viewport)
 			total := m.totalMatchingCount()
-			realVisibleCount := m.maxVisible
+			realVisibleCount := m.effectiveMaxVisible()
 			if m.hasCreateNew() {
 				realVisibleCount--
 			}
@@ -339,11 +341,14 @@ func (m Model) startRename() Model {
 
 // buildItems rescores and sorts entries against the given filter.
 func buildItems(allEntries []dirs.Entry, filter string) []item {
+	// Directory names never contain spaces; treat them as dashes so
+	// "redis cache" matches "2026-04-14-redis-cache".
+	normalized := strings.ReplaceAll(filter, " ", "-")
 	now := time.Now()
 	items := make([]item, len(allEntries))
 
 	for i, entry := range allEntries {
-		r := fuzzy.MatchAt(entry.Name, filter, entry.Mtime, now)
+		r := fuzzy.MatchAt(entry.Name, normalized, entry.Mtime, now)
 		items[i] = item{
 			entry:          entry,
 			score:          r.Score,
@@ -382,6 +387,38 @@ func (m Model) hasCreateNew() bool {
 	return ok
 }
 
+// effectiveMaxVisible returns the number of list rows to render. In inline
+// mode this is the theme-configured cap. In fullscreen mode it adapts to the
+// terminal height, shrinking as preview/status/search chrome grow.
+func (m Model) effectiveMaxVisible() int {
+	if !m.fullscreen || m.height <= 0 {
+		return m.maxVisible
+	}
+
+	// Chrome above + below the list.
+	var chrome int
+	switch m.theme.Layout.SearchStyle {
+	case "bordered":
+		chrome += 3
+	case "underline":
+		chrome += 2
+	default:
+		chrome += 1
+	}
+	chrome += 2 // status bar: separator + hints
+	chrome += 1 // scroll indicator reservation (avoids jitter)
+	if m.previewEnabled {
+		chrome += 11 // title line + bordered tree box (~8 tree rows + borders)
+	}
+	chrome += 1 // safety margin
+
+	n := m.height - chrome
+	if n < 5 {
+		n = 5
+	}
+	return n
+}
+
 // visibleItems returns indices into m.items for items displayed in the
 // current viewport. Returns -1 as the index for the "Create new" virtual
 // entry which always appears at the bottom of the visible list.
@@ -396,7 +433,7 @@ func (m Model) visibleItems() []int {
 		start = 0
 	}
 
-	end := start + m.maxVisible
+	end := start + m.effectiveMaxVisible()
 	// Reserve a slot for "Create new" when it applies
 	if m.hasCreateNew() && end > start {
 		end--
@@ -662,7 +699,7 @@ func (m Model) getGhostCompletion() string {
 		return ""
 	}
 
-	filterLower := strings.ToLower(m.filter)
+	filterLower := strings.ReplaceAll(strings.ToLower(m.filter), " ", "-")
 
 	// Find the best matching slug that starts with the filter
 	for _, it := range m.items {
@@ -675,8 +712,8 @@ func (m Model) getGhostCompletion() string {
 			slug = s
 		}
 		slugLower := strings.ToLower(slug)
-		if strings.HasPrefix(slugLower, filterLower) && len(slug) > len(m.filter) {
-			return slug[len(m.filter):]
+		if strings.HasPrefix(slugLower, filterLower) && len(slug) > len(filterLower) {
+			return slug[len(filterLower):]
 		}
 	}
 	return ""
@@ -686,7 +723,7 @@ func (m Model) getGhostCompletion() string {
 // Displays counts of items above and below the viewport.
 func (m Model) viewScrollIndicator() string {
 	total := m.totalMatchingCount()
-	realVisible := m.maxVisible
+	realVisible := m.effectiveMaxVisible()
 	if m.hasCreateNew() {
 		realVisible--
 	}
@@ -762,7 +799,19 @@ func (m Model) viewPreview(visible []int) string {
 		Width(boxWidth).
 		Render(tree)
 
-	return title + "\n" + box + "\n"
+	// When the theme opts in, prefix a rainbow rule so there's a clear
+	// visual break between the list (and its "N below" indicator) and
+	// the selected directory's preview.
+	var lead string
+	if m.theme.Layout.Rainbow {
+		ruleChars := 41
+		if m.width > 4 {
+			ruleChars = m.width - 2
+		}
+		lead = rainbowRule(ruleChars) + "\n"
+	}
+
+	return lead + title + "\n" + box + "\n"
 }
 
 // viewStatusBar renders context-sensitive key hints.
@@ -960,7 +1009,11 @@ func (m Model) renderItem(it item, isSelected bool, rowIndex int) string {
 		gap = 2 // never collide
 	}
 
-	return leftStr + strings.Repeat(" ", gap) + m.styles.TimeText.Render(tail)
+	tailStyle := m.styles.Normal
+	if isSelected {
+		tailStyle = m.styles.Cursor
+	}
+	return leftStr + strings.Repeat(" ", gap) + tailStyle.Render(tail)
 }
 
 // matchChar renders a single matched character — rainbow-hued when the theme

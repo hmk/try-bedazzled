@@ -11,7 +11,7 @@ func TestLookupIconMatchesKeyword(t *testing.T) {
 		{"go-api", "🐹"},
 		{"python-ml-pipeline", "🐍"}, // first match wins
 		{"rust-cli", "🦀"},
-		{"my-react-app", "⚛️"},
+		{"my-react-app", "🌀"},
 		{"postgres-cluster", "🐘"},
 		{"docker-compose-test", "🐳"},
 	}

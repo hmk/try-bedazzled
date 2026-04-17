@@ -87,3 +87,4 @@ func rainbowRule(n int) string {
 	}
 	return b.String()
 }
+
