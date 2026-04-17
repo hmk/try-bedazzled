@@ -30,11 +30,11 @@ const (
 
 // Result is the outcome of the TUI selector.
 type Result struct {
-	Action       ActionType
-	Path         string   // For CD/Mkdir: the target path
-	DeleteNames  []string // For Delete: names to remove
-	RenameOld    string   // For Rename: original name
-	RenameNew    string   // For Rename: new name
+	Action      ActionType
+	Path        string   // For CD/Mkdir: the target path
+	DeleteNames []string // For Delete: names to remove
+	RenameOld   string   // For Rename: original name
+	RenameNew   string   // For Rename: new name
 }
 
 // Mode tracks the current UI state.
@@ -193,9 +193,18 @@ func (m Model) updateSelect(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m = m.startRename()
 
 	case keyMatch(msg, "ctrl+p"):
+		// Remember which real item the cursor was on so we can keep it
+		// visible after the viewport resizes.
+		selectedGlobal := m.offset + m.cursor
+		wasOnCreateNew := m.hasCreateNew() && m.cursor == m.visibleCount()-1
+
 		m.previewEnabled = !m.previewEnabled
 		if m.onPreviewToggle != nil {
 			m.onPreviewToggle(m.previewEnabled)
+		}
+
+		if !wasOnCreateNew {
+			m = m.centerOnSelection(selectedGlobal)
 		}
 
 	case keyMatch(msg, "ctrl+g"):
@@ -387,6 +396,55 @@ func (m Model) hasCreateNew() bool {
 	return ok
 }
 
+// centerOnSelection recomputes offset and cursor so the item at
+// `globalIdx` (an index into the matching-items list) sits in the middle
+// of the current viewport. Used after the viewport resizes (e.g. preview
+// toggle) to keep the selected row visible.
+func (m Model) centerOnSelection(globalIdx int) Model {
+	total := m.totalMatchingCount()
+	if total == 0 {
+		m.offset = 0
+		m.cursor = 0
+		return m
+	}
+	if globalIdx < 0 {
+		globalIdx = 0
+	}
+	if globalIdx > total-1 {
+		globalIdx = total - 1
+	}
+
+	cap := m.effectiveMaxVisible()
+	if m.hasCreateNew() {
+		cap-- // "Create new" occupies the last slot
+	}
+	if cap < 1 {
+		cap = 1
+	}
+
+	newCursor := cap / 2
+	if newCursor > globalIdx {
+		newCursor = globalIdx
+	}
+	newOffset := globalIdx - newCursor
+
+	maxOffset := total - cap
+	if maxOffset < 0 {
+		maxOffset = 0
+	}
+	if newOffset > maxOffset {
+		newOffset = maxOffset
+		newCursor = globalIdx - newOffset
+	}
+	if newOffset < 0 {
+		newOffset = 0
+	}
+
+	m.offset = newOffset
+	m.cursor = newCursor
+	return m
+}
+
 // effectiveMaxVisible returns the number of list rows to render. In inline
 // mode this is the theme-configured cap. In fullscreen mode it adapts to the
 // terminal height, shrinking as preview/status/search chrome grow.
@@ -408,7 +466,12 @@ func (m Model) effectiveMaxVisible() int {
 	chrome += 2 // status bar: separator + hints
 	chrome += 1 // scroll indicator reservation (avoids jitter)
 	if m.previewEnabled {
-		chrome += 11 // title line + bordered tree box (~8 tree rows + borders)
+		// rainbow rule (1 when opted in) + title (1) + box top/bot (2)
+		// + 7 tree rows = up to 11 rows
+		chrome += 2 + 7 + 2 // title + tree + box borders
+		if m.theme.Layout.Rainbow {
+			chrome += 1 // extra rule above the preview title
+		}
 	}
 	chrome += 1 // safety margin
 
@@ -474,21 +537,6 @@ func clampCursor(cursor, visibleCount int) int {
 		return max
 	}
 	return cursor
-}
-
-// clampOffset ensures offset doesn't scroll past the end of the list.
-func clampOffset(offset, totalMatching, maxVisible int) int {
-	if offset < 0 {
-		return 0
-	}
-	maxOffset := totalMatching - maxVisible
-	if maxOffset < 0 {
-		maxOffset = 0
-	}
-	if offset > maxOffset {
-		return maxOffset
-	}
-	return offset
 }
 
 func (m Model) updateConfirmDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -765,8 +813,10 @@ func (m Model) viewPreview(visible []int) string {
 	}
 	entry := m.items[idx].entry
 
-	// Render tree (cap at 8 lines, depth 2)
-	tree := RenderFileTree(entry.Path, 2, 8, m.styles)
+	// Render tree (cap at 7 lines, depth 2) — one row shorter than before
+	// to leave a cushion so fullscreen mode doesn't push the search bar
+	// off the top of the screen.
+	tree := RenderFileTree(entry.Path, 2, 7, m.styles)
 	if tree == "" {
 		tree = m.styles.Dim.Render("  (empty)")
 	}

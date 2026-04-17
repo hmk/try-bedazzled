@@ -31,8 +31,8 @@ const (
 
 // SettingsResult is what the caller reads after the model quits.
 type SettingsResult struct {
-	Saved  bool          // true if user pressed Esc (which saves); false on Ctrl-C
-	Config theme.Config  // current state
+	Saved  bool         // true if user pressed Esc (which saves); false on Ctrl-C
+	Config theme.Config // current state
 }
 
 // SettingsModel is the Bubble Tea model for the settings screen.

@@ -20,13 +20,13 @@ type Styles struct {
 	Ghost       lipgloss.Style // Ghost autocomplete text
 
 	// Chrome
-	SearchBox   lipgloss.Style // Bordered search bar
-	SearchBar   lipgloss.Style // Inner search content
-	StatusBar   lipgloss.Style
-	StatusKey   lipgloss.Style // Key name in status bar
-	ConfirmBox  lipgloss.Style // Delete confirmation dialog
-	Title       lipgloss.Style
-	ScrollHint  lipgloss.Style // Scroll indicator
+	SearchBox  lipgloss.Style // Bordered search bar
+	SearchBar  lipgloss.Style // Inner search content
+	StatusBar  lipgloss.Style
+	StatusKey  lipgloss.Style // Key name in status bar
+	ConfirmBox lipgloss.Style // Delete confirmation dialog
+	Title      lipgloss.Style
+	ScrollHint lipgloss.Style // Scroll indicator
 
 	// Symbols from the theme.
 	Symbols theme.Symbols

@@ -54,24 +54,6 @@ func rainbowHue(pos, total int, startHue float64) string {
 	return hsl2hex(h, 0.72, 0.62)
 }
 
-// rainbowText renders s with each rune in a different hue across a 360° arc.
-// Optional bold styling matches the non-rainbow cursor glyph feel.
-func rainbowText(s string, bold bool) string {
-	runes := []rune(s)
-	if len(runes) == 0 {
-		return ""
-	}
-	var b strings.Builder
-	for i, r := range runes {
-		style := lipgloss.NewStyle().Foreground(lipgloss.Color(rainbowHue(i, len(runes), 0)))
-		if bold {
-			style = style.Bold(true)
-		}
-		b.WriteString(style.Render(string(r)))
-	}
-	return b.String()
-}
-
 // rainbowRule returns a horizontal rule of n box-drawing chars, each
 // colored along the rainbow. A leading space aligns it with the usual
 // " ─────…" layout.
@@ -87,4 +69,3 @@ func rainbowRule(n int) string {
 	}
 	return b.String()
 }
-

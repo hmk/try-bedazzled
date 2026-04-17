@@ -53,10 +53,10 @@ func TestParseDatePrefix(t *testing.T) {
 		{"2026-04-11-", "2026-04-11", "", true}, // empty slug is valid parse
 		{"no-date-here", "", "", false},
 		{"short", "", "", false},
-		{"2026-04-11redis", "", "", false},  // missing dash after date
-		{"abcd-ef-gh-nope", "", "", false},  // non-numeric date
-		{"2026-13-01-bad", "", "", false},   // invalid month
-		{"2026-04-32-bad", "", "", false},   // invalid day
+		{"2026-04-11redis", "", "", false}, // missing dash after date
+		{"abcd-ef-gh-nope", "", "", false}, // non-numeric date
+		{"2026-13-01-bad", "", "", false},  // invalid month
+		{"2026-04-32-bad", "", "", false},  // invalid day
 	}
 
 	for _, tt := range tests {

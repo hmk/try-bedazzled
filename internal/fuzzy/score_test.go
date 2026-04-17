@@ -9,8 +9,8 @@ import (
 // Fixed reference time for deterministic tests
 var (
 	now   = time.Date(2026, 4, 11, 12, 0, 0, 0, time.UTC)
-	fresh = now.Add(-1 * time.Hour)  // 1 hour ago
-	old   = now.Add(-720 * time.Hour) // 30 days ago
+	fresh = now.Add(-1 * time.Hour)    // 1 hour ago
+	old   = now.Add(-720 * time.Hour)  // 30 days ago
 	stale = now.Add(-2160 * time.Hour) // 90 days ago
 )
 
@@ -28,11 +28,11 @@ func TestHasDatePrefix(t *testing.T) {
 		{"2026-04-11-redis", true},
 		{"2025-01-01-foo", true},
 		{"2026-12-31-bar", true},
-		{"2026-04-11-", true},       // just the prefix, empty slug
+		{"2026-04-11-", true}, // just the prefix, empty slug
 		{"no-date-here", false},
-		{"202-04-11-short", false},  // year too short
-		{"2026-4-11-nopad", false},  // month not zero-padded
-		{"2026-04-1-nopad", false},  // day not zero-padded
+		{"202-04-11-short", false}, // year too short
+		{"2026-4-11-nopad", false}, // month not zero-padded
+		{"2026-04-1-nopad", false}, // day not zero-padded
 		{"abcd-ef-gh-nope", false},
 		{"", false},
 		{"2026-04-11redis", false},  // missing trailing dash
@@ -322,10 +322,10 @@ func TestRecencyFormulaValues(t *testing.T) {
 		hours float64
 		want  float64
 	}{
-		{0, 3.0},        // just accessed
+		{0, 3.0}, // just accessed
 		{1, 3.0 / math.Sqrt(2)},
-		{8, 1.0},         // 3.0 / sqrt(9) = 1.0
-		{24, 0.6},        // 3.0 / sqrt(25) = 0.6
+		{8, 1.0},  // 3.0 / sqrt(9) = 1.0
+		{24, 0.6}, // 3.0 / sqrt(25) = 0.6
 		{720, 3.0 / math.Sqrt(721)},
 	}
 
@@ -386,7 +386,7 @@ func TestUnicodeInName(t *testing.T) {
 func TestDensityBonus(t *testing.T) {
 	// "abc" consecutive vs scattered — consecutive should score higher
 	// due to density bonus: queryLen / (lastPos + 1)
-	dense := matchAt("abcdef", "abc", fresh)       // lastPos=2, density=3/3=1.0
+	dense := matchAt("abcdef", "abc", fresh)         // lastPos=2, density=3/3=1.0
 	sparse := matchAt("a---b-------c", "abc", fresh) // lastPos=12, density=3/13≈0.23
 
 	if !dense.Matched || !sparse.Matched {

@@ -21,7 +21,7 @@ type Entry struct {
 
 // ScanResult holds the result of scanning a tries directory.
 type ScanResult struct {
-	Entries []Entry
+	Entries  []Entry
 	BasePath string
 }
 

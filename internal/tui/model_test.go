@@ -264,7 +264,7 @@ func TestCtrlDTogglesDeleteMark(t *testing.T) {
 
 func TestDeleteMarkedItemsGoesToConfirm(t *testing.T) {
 	m := newTestModel("")
-	m = sendKeys(m, "ctrl+d") // mark first
+	m = sendKeys(m, "ctrl+d")         // mark first
 	m = sendKeys(m, "down", "ctrl+d") // mark second
 	m = sendKeys(m, "enter")
 
@@ -280,7 +280,7 @@ func TestDeleteMarkedItemsGoesToConfirm(t *testing.T) {
 func TestDeleteConfirmYes(t *testing.T) {
 	m := newTestModel("")
 	m = sendKeys(m, "ctrl+d", "down", "ctrl+d", "enter") // mark 2, enter → confirm
-	m = sendKeys(m, "y")                                   // confirm
+	m = sendKeys(m, "y")                                 // confirm
 
 	if !m.Done() {
 		t.Fatal("should be done after confirm")
