@@ -29,16 +29,44 @@ Type to filter. Press Enter to `cd`. Type a new name and press Enter to create. 
 
 ## Install
 
+### With Go
+
 ```bash
 go install github.com/hmk/try-bedazzled/cmd/try@latest
 ```
 
-Or download a pre-built binary from [Releases](https://github.com/hmk/try-bedazzled/releases):
+### curl (pre-built binary)
+
+Pick the tarball for your OS/arch from [Releases](https://github.com/hmk/try-bedazzled/releases/latest):
 
 ```bash
-tar xzf try-bedazzled_*.tar.gz
+# macOS, Apple Silicon
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Darwin_arm64.tar.gz
+
+# macOS, Intel
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Darwin_amd64.tar.gz
+
+# Linux, amd64
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Linux_amd64.tar.gz
+
+# Linux, arm64
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Linux_arm64.tar.gz
+
+tar xzf try.tar.gz
 sudo mv try /usr/local/bin/
 ```
+
+> **macOS Gatekeeper**: the published binaries aren't notarized yet. If the
+> first run prints "cannot be opened because the developer cannot be
+> verified", clear the quarantine flag once:
+>
+> ```bash
+> xattr -d com.apple.quarantine /usr/local/bin/try
+> ```
+
+### Debian / RPM
+
+Each release also ships `.deb` and `.rpm` packages on the Releases page.
 
 ---
 

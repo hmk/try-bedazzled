@@ -1,0 +1,82 @@
+name: Bug report
+description: Something isn't working as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. The more detail you can give,
+        the faster we can track it down.
+
+  - type: input
+    id: version
+    attributes:
+      label: try-bedazzled version
+      description: Output of `try --version`
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 14.5 / Ubuntu 24.04 / etc."
+    validations:
+      required: true
+
+  - type: input
+    id: terminal
+    attributes:
+      label: Terminal emulator
+      placeholder: "iTerm2 3.5 / Alacritty 0.13 / WezTerm / Ghostty / etc."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Active theme
+      options:
+        - bedazzled (default)
+        - rainbow
+        - catppuccin
+        - dracula
+        - minimal
+        - custom
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Smallest reproduction you can put together
+      placeholder: |
+        1. run `try` in a populated tries dir
+        2. type `redis cache`
+        3. press Ctrl-P
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Logs, screenshots, or config
+      description: |
+        Paste any relevant output here. If the TUI renders wrong, a screenshot
+        or a paste of the raw ANSI (from `script(1)` or equivalent) is helpful.

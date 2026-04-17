@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or usage help
+    url: https://github.com/hmk/try-bedazzled/discussions
+    about: For general questions, setup help, or feature brainstorming
+  - name: Security report
+    url: https://github.com/hmk/try-bedazzled/blob/main/SECURITY.md
+    about: Do not open a public issue for security reports — see SECURITY.md
