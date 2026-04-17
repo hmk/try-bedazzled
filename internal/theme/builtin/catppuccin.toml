@@ -24,4 +24,4 @@ show_time    = true
 show_score   = true
 columns      = ["icon", "date", "name"]
 search_style = "bordered"
-selected_bg  = true
+selected_row_bg = "#45475A"  # Surface1

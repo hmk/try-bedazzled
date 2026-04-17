@@ -19,6 +19,7 @@ func TestBuiltinNames(t *testing.T) {
 		"catppuccin": false,
 		"dracula":    false,
 		"minimal":    false,
+		"rainbow":    false,
 	}
 
 	if names[0] != "bedazzled" {
@@ -46,12 +47,12 @@ func TestLoadBuiltinDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Verify some key values from bedazzled.toml
-	if theme.Colors.Accent != "#FF2D95" {
-		t.Errorf("accent = %q, want #FF2D95", theme.Colors.Accent)
+	// Verify some key values from bedazzled.toml (catppuccin palette + rainbow)
+	if theme.Colors.Accent != "#CBA6F7" {
+		t.Errorf("accent = %q, want #CBA6F7", theme.Colors.Accent)
 	}
-	if theme.Colors.Match != "#FACC15" {
-		t.Errorf("match = %q, want #FACC15", theme.Colors.Match)
+	if theme.Colors.Match != "#F9E2AF" {
+		t.Errorf("match = %q, want #F9E2AF", theme.Colors.Match)
 	}
 	if theme.Symbols.Cursor != "▸" {
 		t.Errorf("cursor = %q, want ▸", theme.Symbols.Cursor)
@@ -330,14 +331,14 @@ func TestResolveConfigTheme(t *testing.T) {
 
 func TestResolveDefaultFallback(t *testing.T) {
 	theme := Resolve(false, "")
-	if theme.Colors.Accent != "#FF2D95" {
+	if theme.Colors.Accent != "#CBA6F7" {
 		t.Errorf("default fallback should load bedazzled theme, got accent=%q", theme.Colors.Accent)
 	}
 }
 
 func TestResolveUnknownThemeFallsBackToDefault(t *testing.T) {
 	theme := Resolve(false, "nonexistent-theme-xyz")
-	if theme.Colors.Accent != "#FF2D95" {
+	if theme.Colors.Accent != "#CBA6F7" {
 		t.Errorf("unknown theme should fall back to bedazzled, got accent=%q", theme.Colors.Accent)
 	}
 }

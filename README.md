@@ -96,12 +96,13 @@ eval "$(try init ~/workspace/experiments)"
 
 ### Themes
 
-Four built-in themes, switchable live with `try theme`:
+Five built-in themes, switchable live with `try theme`:
 
 | Theme | Description |
 |---|---|
-| `bedazzled` *(default)* | Rainbow search rules, shifting cursor hues, rainbow fuzzy hits |
-| `catppuccin` | Catppuccin Mocha pastels |
+| `bedazzled` *(default)* | Catppuccin Mocha palette with rainbow search rules, shifting cursor hues, rainbow fuzzy hits, and a rainbow gradient row highlight |
+| `rainbow` | Hot-pink accent + full rainbow treatment — the loudest option |
+| `catppuccin` | Catppuccin Mocha pastels, no rainbow |
 | `dracula` | Dark and saturated |
 | `minimal` | ASCII-safe, no unicode — good for CI and accessibility |
 

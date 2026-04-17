@@ -8,16 +8,15 @@ import (
 // Styles holds all Lip Gloss styles derived from a Theme.
 type Styles struct {
 	// Entry rendering
-	Cursor      lipgloss.Style
-	Selected    lipgloss.Style
-	SelectedRow lipgloss.Style // Background highlight for full row
-	Normal      lipgloss.Style
-	Dim         lipgloss.Style
-	Match       lipgloss.Style
-	Danger      lipgloss.Style
-	Success     lipgloss.Style
-	TimeText    lipgloss.Style // Relative time column
-	Ghost       lipgloss.Style // Ghost autocomplete text
+	Cursor   lipgloss.Style
+	Selected lipgloss.Style
+	Normal   lipgloss.Style
+	Dim      lipgloss.Style
+	Match    lipgloss.Style
+	Danger   lipgloss.Style
+	Success  lipgloss.Style
+	TimeText lipgloss.Style // Relative time column
+	Ghost    lipgloss.Style // Ghost autocomplete text
 
 	// Chrome
 	SearchBox  lipgloss.Style // Bordered search bar
@@ -44,14 +43,6 @@ func NewStyles(t theme.Theme) Styles {
 		s.Cursor = lipgloss.NewStyle().Foreground(accentColor).Bold(true)
 		s.Selected = lipgloss.NewStyle().Foreground(accentColor)
 		s.StatusKey = lipgloss.NewStyle().Foreground(accentColor).Bold(true)
-
-		if t.Layout.SelectedBg {
-			// Derive a subtle dark background from the accent
-			s.SelectedRow = lipgloss.NewStyle().Background(lipgloss.Color("#1a1a2e"))
-		} else {
-			s.SelectedRow = lipgloss.NewStyle()
-		}
-
 		s.SearchBox = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(accentColor).
@@ -59,7 +50,6 @@ func NewStyles(t theme.Theme) Styles {
 	} else {
 		s.Cursor = lipgloss.NewStyle().Bold(true)
 		s.Selected = lipgloss.NewStyle()
-		s.SelectedRow = lipgloss.NewStyle()
 		s.StatusKey = lipgloss.NewStyle().Bold(true)
 		s.SearchBox = lipgloss.NewStyle().Padding(0, 1)
 	}

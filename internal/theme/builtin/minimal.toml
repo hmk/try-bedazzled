@@ -25,4 +25,4 @@ show_time    = false
 show_score   = false
 columns      = ["name", "date"]
 search_style = "minimal"
-selected_bg  = false
+selected_row_bg = ""  # ASCII/accessibility safe — no BG highlight

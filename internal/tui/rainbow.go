@@ -2,10 +2,14 @@ package tui
 
 import (
 	"fmt"
+	"image/color"
 	"math"
 	"strings"
 
+	lgv2 "charm.land/lipgloss/v2"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/mattn/go-runewidth"
 )
 
 // hsl2hex converts an HSL color (h in [0,360], s and l in [0,1]) to a #RRGGBB hex string.
@@ -52,6 +56,89 @@ func rainbowHue(pos, total int, startHue float64) string {
 	}
 	h := startHue + float64(pos)*(360.0/float64(total))
 	return hsl2hex(h, 0.72, 0.62)
+}
+
+// rainbowStops are the six rainbow anchor colors for row-background gradients.
+var rainbowStops = []color.Color{
+	lipgloss.Color("#FF2D95"), // hot pink
+	lipgloss.Color("#FF6B00"), // orange
+	lipgloss.Color("#FACC15"), // yellow
+	lipgloss.Color("#10B981"), // green
+	lipgloss.Color("#3B82F6"), // blue
+	lipgloss.Color("#8B5CF6"), // purple
+}
+
+// gradientRowBG wraps a rendered row in a left→right CIELAB rainbow
+// background (via lipgloss/v2 Blend1D), padding to `width` columns and
+// overriding the foreground to bold white for legibility. Any existing
+// ANSI styles in `rendered` are stripped first — on selected rows the
+// gradient carries the emphasis by itself.
+func gradientRowBG(rendered string, width int) string {
+	if width < 1 {
+		width = 1
+	}
+	plain := ansi.Strip(rendered)
+	// Trim trailing whitespace since we'll repad to exact width.
+	plain = strings.TrimRight(plain, " ")
+	plainWidth := runewidth.StringWidth(plain)
+	if plainWidth < width {
+		plain += strings.Repeat(" ", width-plainWidth)
+	}
+
+	colors := lgv2.Blend1D(width, rainbowStops...)
+
+	var b strings.Builder
+	col := 0
+	for _, r := range plain {
+		if col >= width {
+			break
+		}
+		w := runewidth.RuneWidth(r)
+		if w == 0 {
+			b.WriteRune(r) // combining mark; don't advance the color index
+			continue
+		}
+		idx := col
+		if idx >= len(colors) {
+			idx = len(colors) - 1
+		}
+		bg := hexOf(colors[idx])
+		b.WriteString(lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.Color(bg)).
+			Bold(true).
+			Render(string(r)))
+		col += w
+	}
+	return b.String()
+}
+
+// hexOf converts a color.Color to a #RRGGBB string.
+func hexOf(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+	return fmt.Sprintf("#%02X%02X%02X", r>>8, g>>8, b>>8)
+}
+
+// solidRowBG wraps a row in a single-color background, padding to `width`
+// columns with bold text at `fgHex`. Strips any existing ANSI so the
+// coloring is uniform — the BG carries the "selected row" signal by itself.
+func solidRowBG(rendered string, bgHex, fgHex string, width int) string {
+	if width < 1 {
+		width = 1
+	}
+	plain := ansi.Strip(rendered)
+	plain = strings.TrimRight(plain, " ")
+	plainWidth := runewidth.StringWidth(plain)
+	if plainWidth < width {
+		plain += strings.Repeat(" ", width-plainWidth)
+	}
+	style := lipgloss.NewStyle().
+		Background(lipgloss.Color(bgHex)).
+		Bold(true)
+	if fgHex != "" {
+		style = style.Foreground(lipgloss.Color(fgHex))
+	}
+	return style.Render(plain)
 }
 
 // rainbowRule returns a horizontal rule of n box-drawing chars, each

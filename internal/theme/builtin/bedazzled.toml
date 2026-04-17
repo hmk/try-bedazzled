@@ -1,14 +1,15 @@
-# bedazzled — rainbow and ridiculous
-# The default try theme: rainbow search rules, shifting cursor hues, and rainbow fuzzy hits.
-# Pick a calmer theme (catppuccin, dracula, minimal) if this is too much.
+# bedazzled — catppuccin mocha palette with rainbow gradient flair
+# The default try theme: catppuccin pastels everywhere, with rainbow search
+# rules, shifting cursor hues, rainbow fuzzy hits, and a rainbow gradient
+# background on the selected row. For a louder all-pink variant see `rainbow`.
 
 [colors]
-accent  = "#FF2D95"   # hot pink — used when rainbow isn't active
-dim     = "#6B7280"   # slate — dates, secondary text
-text    = "#F5F3FF"   # near-white with violet tint
-match   = "#FACC15"   # yellow (overridden per-char when rainbow = true)
-danger  = "#EF4444"   # Delete confirmation
-success = "#10B981"   # Creation
+accent  = "#CBA6F7"   # Catppuccin Mauve — used when rainbow isn't active
+dim     = "#6C7086"   # Overlay0
+text    = "#CDD6F4"   # Text
+match   = "#F9E2AF"   # Yellow (overridden per-char when rainbow = true)
+danger  = "#F38BA8"   # Red
+success = "#A6E3A1"   # Green
 bg      = ""          # Empty = transparent (terminal default)
 
 [symbols]
@@ -24,6 +25,6 @@ show_date    = "right"
 show_time    = true
 show_score   = true
 columns      = ["icon", "date", "name"]
-search_style = "bordered"
-selected_bg  = true
-rainbow      = true
+search_style   = "bordered"
+rainbow        = true         # rainbow search rules, cursor hues, fuzzy hits
+selected_row_bg = "#45475A"   # Catppuccin Surface1 — solid BG on selected row

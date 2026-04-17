@@ -636,12 +636,16 @@ func (m Model) View() string {
 					fallback = "+"
 				}
 				icon := theme.LookupIcon(slug, fallback, m.customIcons)
+
+				var createLine string
 				if isSelected {
 					cursor := m.styles.Cursor.Render(m.styles.Symbols.Cursor)
-					b.WriteString(m.styles.Success.Render(fmt.Sprintf("%s %s Create new: %s", cursor, icon, name)))
+					createLine = m.styles.Success.Render(fmt.Sprintf("%s %s Create new: %s", cursor, icon, name))
+					createLine = m.highlightSelected(createLine)
 				} else {
-					b.WriteString(m.styles.Success.Render(fmt.Sprintf("  %s Create new: %s", icon, name)))
+					createLine = m.styles.Success.Render(fmt.Sprintf("  %s Create new: %s", icon, name))
 				}
+				b.WriteString(createLine)
 				b.WriteString("\n")
 				continue
 			}
@@ -1063,14 +1067,40 @@ func (m Model) renderItem(it item, isSelected bool, rowIndex int) string {
 	if isSelected {
 		tailStyle = m.styles.Cursor
 	}
-	return leftStr + strings.Repeat(" ", gap) + tailStyle.Render(tail)
+	line := leftStr + strings.Repeat(" ", gap) + tailStyle.Render(tail)
+
+	if isSelected {
+		line = m.highlightSelected(line)
+	}
+	return line
+}
+
+// highlightSelected applies the current theme's "selected row" treatment
+// to a fully-rendered row string:
+//   - explicit SelectedRowBG wins (solid theme-colored background)
+//   - otherwise Rainbow themes get a CIELAB horizontal gradient
+//   - otherwise the line is returned unchanged
+//
+// Used both for real entries and the "Create new" virtual row.
+func (m Model) highlightSelected(line string) string {
+	width := m.width
+	if width <= 0 {
+		width = 80
+	}
+	switch {
+	case m.theme.Layout.SelectedRowBG != "":
+		return solidRowBG(line, m.theme.Layout.SelectedRowBG, m.theme.Colors.Text, width)
+	case m.theme.Layout.Rainbow:
+		return gradientRowBG(line, width)
+	}
+	return line
 }
 
 // matchChar renders a single matched character — rainbow-hued when the theme
 // opts in (each character gets a position-derived hue), otherwise the theme's
 // Match style.
 func (m Model) matchChar(ch string, matchPos int) string {
-	if !m.theme.Layout.Rainbow {
+	if !m.theme.Layout.RainbowMatches {
 		return m.styles.Match.Render(ch)
 	}
 	// Step the hue by a prime-ish offset so consecutive matches don't blur.

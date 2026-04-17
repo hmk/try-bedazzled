@@ -65,12 +65,20 @@ type Layout struct {
 	// SearchStyle controls the search bar appearance: "bordered", "underline", "minimal".
 	SearchStyle string `toml:"search_style"`
 
-	// SelectedBg enables a subtle background highlight on the selected row.
-	SelectedBg bool `toml:"selected_bg"`
+	// SelectedRowBG is a hex color used as the full-width background of
+	// the selected row. Empty = no highlight. Ignored when Rainbow is on
+	// (rainbow gradient takes over).
+	SelectedRowBG string `toml:"selected_row_bg"`
 
-	// Rainbow turns on per-character rainbow rendering for the search bar
-	// rules, the selected-row cursor, and fuzzy-match highlights.
+	// Rainbow turns on rainbow rendering for the search bar rules and the
+	// per-row cursor glyph hue. Selected-row gradient background is also
+	// gated by this flag (unless SelectedRowBG is set, which wins).
 	Rainbow bool `toml:"rainbow"`
+
+	// RainbowMatches colors each matched character along the rainbow
+	// instead of using the theme's Match color. Independent of Rainbow so
+	// themes can opt in to subtle rainbow accents without loud match text.
+	RainbowMatches bool `toml:"rainbow_matches"`
 
 	// ShowScore appends the fuzzy match score after the relative time,
 	// matching tobi/try-cli's "3h ago, 18.5" right-column format.
@@ -112,7 +120,6 @@ func NoColor() Theme {
 			ShowScore:   false,
 			Columns:     []string{"name", "date"},
 			SearchStyle: "minimal",
-			SelectedBg:  false,
 			Rainbow:     false,
 		},
 	}
