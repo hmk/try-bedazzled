@@ -1,0 +1,85 @@
+name: Demo GIF
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - demo.tape
+      - cmd/**
+      - internal/**
+      - .github/workflows/demo.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vhs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build try
+        run: |
+          go build -o /tmp/try ./cmd/try
+          sudo install /tmp/try /usr/local/bin/try
+
+      - name: Install ffmpeg + Noto Color Emoji
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-color-emoji
+
+      - name: Install ttyd
+        run: |
+          TTYD_VERSION=1.7.7
+          curl -fsSL -o /tmp/ttyd \
+            "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64"
+          chmod +x /tmp/ttyd
+          sudo install /tmp/ttyd /usr/local/bin/ttyd
+
+      - name: Install Fragment Mono
+        run: |
+          mkdir -p "$HOME/.local/share/fonts/fragment-mono"
+          for f in FragmentMono-Regular.ttf FragmentMono-Italic.ttf; do
+            curl -fsSL -o "$HOME/.local/share/fonts/fragment-mono/$f" \
+              "https://github.com/google/fonts/raw/main/ofl/fragmentmono/$f"
+          done
+          fc-cache -fv
+
+      - name: Install VHS
+        run: go install github.com/charmbracelet/vhs@latest
+
+      - name: Prepare fixture tries
+        run: |
+          rm -rf /tmp/demo-tries
+          mkdir -p /tmp/demo-tries
+          for d in \
+            2026-04-14-redis-cache \
+            2026-04-13-go-api \
+            2026-04-12-react-dashboard \
+            2026-04-11-ml-pipeline \
+            2026-04-10-rust-bench \
+            2026-04-08-postgres-migration \
+            2026-04-05-terraform-modules \
+            2026-03-28-docker-compose-auth \
+            2026-03-14-python-cli \
+            2026-02-28-kubernetes-operator; do
+            mkdir -p "/tmp/demo-tries/$d"
+            touch "/tmp/demo-tries/$d/README.md"
+          done
+
+      - name: Generate demo.gif
+        run: |
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          vhs demo.tape
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: regenerate demo.gif [skip ci]"
+          file_pattern: demo.gif
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com

@@ -5,6 +5,8 @@
 A Go rewrite of [tobi/try-cli](https://github.com/tobi/try-cli) (C) using [Charmbracelet](https://charm.sh) libraries —
 almost as fast as C, 15× faster than Ruby, and it actually has a TUI.
 
+![demo](demo.gif)
+
 ---
 
 ## What it does
