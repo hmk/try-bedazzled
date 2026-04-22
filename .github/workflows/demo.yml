@@ -17,9 +17,9 @@ jobs:
   vhs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
@@ -77,7 +77,7 @@ jobs:
           export PATH="$(go env GOPATH)/bin:$PATH"
           vhs demo.tape
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: regenerate demo.gif [skip ci]"
           file_pattern: demo.gif

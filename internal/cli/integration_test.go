@@ -304,7 +304,11 @@ func TestIntegrationExecWorktreeInGitRepo(t *testing.T) {
 		t.Fatalf("failed to create git repo: %v", err)
 	}
 	// Need at least one commit for worktree to work
-	cmd = exec.Command("git", "-C", gitDir, "commit", "--allow-empty", "-m", "init")
+	cmd = exec.Command("git", "-C", gitDir,
+		"-c", "user.name=try-test",
+		"-c", "user.email=try-test@example.com",
+		"-c", "commit.gpgsign=false",
+		"commit", "--allow-empty", "-m", "init")
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("failed to create initial commit: %v", err)
 	}
