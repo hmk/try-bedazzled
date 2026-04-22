@@ -77,7 +77,7 @@ jobs:
           export PATH="$(go env GOPATH)/bin:$PATH"
           vhs demo.tape
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: regenerate demo.gif [skip ci]"
           file_pattern: demo.gif
