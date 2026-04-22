@@ -344,7 +344,7 @@ func (m SettingsModel) viewRight(rows []settingRow) string {
 		if len(m.cfg.CustomIcons) > 0 {
 			b.WriteString(dim.Render("Current mappings:") + "\n")
 			for word, emoji := range m.cfg.CustomIcons {
-				b.WriteString(fmt.Sprintf("  %s = %s\n", word, emoji))
+				_, _ = fmt.Fprintf(&b, "  %s = %s\n", word, emoji)
 			}
 		}
 		return b.String()

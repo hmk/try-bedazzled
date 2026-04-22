@@ -17,5 +17,5 @@ func setupTTYRenderer() func() {
 	}
 	renderer := lipgloss.NewRenderer(ttyFile)
 	lipgloss.SetDefaultRenderer(renderer)
-	return func() { ttyFile.Close() }
+	return func() { _ = ttyFile.Close() }
 }
