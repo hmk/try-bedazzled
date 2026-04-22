@@ -60,16 +60,26 @@ func TestEndToEndThemeSwitch(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", configDir)
 
 	// Set catppuccin
-	SetTheme("catppuccin")
-	cfg, _ := LoadConfig()
+	if err := SetTheme("catppuccin"); err != nil {
+		t.Fatalf("SetTheme(catppuccin) failed: %v", err)
+	}
+	cfg, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig after catppuccin failed: %v", err)
+	}
 	r1 := Resolve(false, cfg.Theme)
 	if r1.Colors.Accent != "#CBA6F7" {
 		t.Errorf("after setting catppuccin, accent = %q, want #CBA6F7", r1.Colors.Accent)
 	}
 
 	// Switch to dracula
-	SetTheme("dracula")
-	cfg, _ = LoadConfig()
+	if err := SetTheme("dracula"); err != nil {
+		t.Fatalf("SetTheme(dracula) failed: %v", err)
+	}
+	cfg, err = LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig after dracula failed: %v", err)
+	}
 	r2 := Resolve(false, cfg.Theme)
 	if r2.Colors.Accent != "#BD93F9" {
 		t.Errorf("after switching to dracula, accent = %q, want #BD93F9", r2.Colors.Accent)

@@ -129,10 +129,12 @@ func TestLayoutDefaultsFillIn(t *testing.T) {
 	// A theme with only max_visible set should get defaults for everything else
 	dir := t.TempDir()
 	path := filepath.Join(dir, "sparse.toml")
-	os.WriteFile(path, []byte(`
+	if err := os.WriteFile(path, []byte(`
 [layout]
 max_visible = 8
-`), 0644)
+`), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	theme, err := LoadFile(path)
 	if err != nil {
@@ -175,7 +177,9 @@ cursor = "→"
 [layout]
 max_visible = 20
 `
-	os.WriteFile(path, []byte(content), 0644)
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	theme, err := LoadFile(path)
 	if err != nil {
@@ -202,7 +206,9 @@ func TestLoadFileNotFound(t *testing.T) {
 func TestLoadFileInvalidTOML(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bad.toml")
-	os.WriteFile(path, []byte("this is not valid {{toml"), 0644)
+	if err := os.WriteFile(path, []byte("this is not valid {{toml"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	_, err := LoadFile(path)
 	if err == nil {
@@ -351,7 +357,9 @@ func TestResolveCustomThemeFromDir(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", configDir)
 
 	themesDir := filepath.Join(configDir, "try", "themes")
-	os.MkdirAll(themesDir, 0755)
+	if err := os.MkdirAll(themesDir, 0755); err != nil {
+		t.Fatal(err)
+	}
 
 	customTheme := `
 [colors]
@@ -360,7 +368,9 @@ accent = "#CUSTOM1"
 [symbols]
 cursor = "~"
 `
-	os.WriteFile(filepath.Join(themesDir, "mytheme.toml"), []byte(customTheme), 0644)
+	if err := os.WriteFile(filepath.Join(themesDir, "mytheme.toml"), []byte(customTheme), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	t.Setenv("TRY_THEME", "mytheme")
 	theme := Resolve(false, "")
@@ -379,10 +389,12 @@ func TestPartialThemeGetsDefaults(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "partial.toml")
 	// Only set accent color, nothing else
-	os.WriteFile(path, []byte(`
+	if err := os.WriteFile(path, []byte(`
 [colors]
 accent = "#123456"
-`), 0644)
+`), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	theme, err := LoadFile(path)
 	if err != nil {

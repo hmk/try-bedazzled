@@ -21,8 +21,8 @@ func TestRenderFileTreeEmpty(t *testing.T) {
 
 func TestRenderFileTreeFiles(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "README.md"), []byte("hi"), 0644)
-	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module x"), 0644)
+	mustWriteFile(t, filepath.Join(dir, "README.md"), []byte("hi"))
+	mustWriteFile(t, filepath.Join(dir, "go.mod"), []byte("module x"))
 
 	styles := NewStyles(theme.Default())
 	result := RenderFileTree(dir, 2, 8, styles)
@@ -37,9 +37,9 @@ func TestRenderFileTreeFiles(t *testing.T) {
 
 func TestRenderFileTreeNestedDir(t *testing.T) {
 	dir := t.TempDir()
-	os.Mkdir(filepath.Join(dir, "src"), 0755)
-	os.WriteFile(filepath.Join(dir, "src", "main.go"), []byte(""), 0644)
-	os.WriteFile(filepath.Join(dir, "README.md"), []byte(""), 0644)
+	mustMkdir(t, filepath.Join(dir, "src"))
+	mustWriteFile(t, filepath.Join(dir, "src", "main.go"), []byte(""))
+	mustWriteFile(t, filepath.Join(dir, "README.md"), []byte(""))
 
 	styles := NewStyles(theme.Default())
 	result := RenderFileTree(dir, 2, 8, styles)
@@ -56,9 +56,9 @@ func TestRenderFileTreeNestedDir(t *testing.T) {
 
 func TestRenderFileTreeSkipsHidden(t *testing.T) {
 	dir := t.TempDir()
-	os.Mkdir(filepath.Join(dir, ".git"), 0755)
-	os.WriteFile(filepath.Join(dir, ".DS_Store"), []byte(""), 0644)
-	os.WriteFile(filepath.Join(dir, "visible.txt"), []byte(""), 0644)
+	mustMkdir(t, filepath.Join(dir, ".git"))
+	mustWriteFile(t, filepath.Join(dir, ".DS_Store"), []byte(""))
+	mustWriteFile(t, filepath.Join(dir, "visible.txt"), []byte(""))
 
 	styles := NewStyles(theme.Default())
 	result := RenderFileTree(dir, 2, 8, styles)
@@ -76,8 +76,8 @@ func TestRenderFileTreeSkipsHidden(t *testing.T) {
 
 func TestRenderFileTreeDirsBeforeFiles(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "zebra.txt"), []byte(""), 0644)
-	os.Mkdir(filepath.Join(dir, "alpha"), 0755)
+	mustWriteFile(t, filepath.Join(dir, "zebra.txt"), []byte(""))
+	mustMkdir(t, filepath.Join(dir, "alpha"))
 
 	styles := NewStyles(theme.Default())
 	result := RenderFileTree(dir, 1, 8, styles)
@@ -98,7 +98,7 @@ func TestRenderFileTreeMaxLines(t *testing.T) {
 	dir := t.TempDir()
 	// Create many files
 	for i := 0; i < 20; i++ {
-		os.WriteFile(filepath.Join(dir, "file"+string(rune('a'+i))+".txt"), []byte(""), 0644)
+		mustWriteFile(t, filepath.Join(dir, "file"+string(rune('a'+i))+".txt"), []byte(""))
 	}
 
 	styles := NewStyles(theme.Default())
@@ -113,8 +113,10 @@ func TestRenderFileTreeMaxLines(t *testing.T) {
 func TestRenderFileTreeMaxDepth(t *testing.T) {
 	dir := t.TempDir()
 	// Create nested structure: dir/a/b/c/deep.txt
-	os.MkdirAll(filepath.Join(dir, "a", "b", "c"), 0755)
-	os.WriteFile(filepath.Join(dir, "a", "b", "c", "deep.txt"), []byte(""), 0644)
+	if err := os.MkdirAll(filepath.Join(dir, "a", "b", "c"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	mustWriteFile(t, filepath.Join(dir, "a", "b", "c", "deep.txt"), []byte(""))
 
 	styles := NewStyles(theme.Default())
 	result := RenderFileTree(dir, 2, 20, styles)
@@ -134,5 +136,19 @@ func TestRenderFileTreeNonExistent(t *testing.T) {
 	// Should not panic, should return empty or just a dim message
 	if len(result) > 100 {
 		t.Errorf("non-existent path should return short output, got %d chars", len(result))
+	}
+}
+
+func mustMkdir(t *testing.T, path string) {
+	t.Helper()
+	if err := os.Mkdir(path, 0755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func mustWriteFile(t *testing.T, path string, data []byte) {
+	t.Helper()
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		t.Fatal(err)
 	}
 }

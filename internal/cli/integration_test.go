@@ -390,9 +390,13 @@ func TestIntegrationThemeConfigApplied(t *testing.T) {
 	// Set up isolated config dir with dracula theme
 	configDir := t.TempDir()
 	tryConfigDir := filepath.Join(configDir, "try")
-	os.MkdirAll(tryConfigDir, 0755)
-	os.WriteFile(filepath.Join(tryConfigDir, "config.toml"),
-		[]byte("theme = \"dracula\"\n"), 0644)
+	if err := os.MkdirAll(tryConfigDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tryConfigDir, "config.toml"),
+		[]byte("theme = \"dracula\"\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Set up tries dir with an entry
 	triesDir := t.TempDir()
@@ -409,7 +413,7 @@ func TestIntegrationThemeConfigApplied(t *testing.T) {
 		// Clear TRY_THEME so it doesn't override
 		"TRY_THEME=",
 	)
-	cmd.Run() // exit code doesn't matter (ESCAPE = cancel)
+	_ = cmd.Run() // exit code doesn't matter (ESCAPE = cancel)
 
 	stderr := errBuf.String()
 	t.Logf("TUI stderr output (%d bytes):\n%s", len(stderr), stderr)
@@ -432,9 +436,13 @@ func TestIntegrationThemeEnvOverridesConfig(t *testing.T) {
 	// Config says "default"
 	configDir := t.TempDir()
 	tryConfigDir := filepath.Join(configDir, "try")
-	os.MkdirAll(tryConfigDir, 0755)
-	os.WriteFile(filepath.Join(tryConfigDir, "config.toml"),
-		[]byte("theme = \"default\"\n"), 0644)
+	if err := os.MkdirAll(tryConfigDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tryConfigDir, "config.toml"),
+		[]byte("theme = \"default\"\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	triesDir := t.TempDir()
 	mkdirs(t, triesDir, "2026-04-11-test")
@@ -451,7 +459,7 @@ func TestIntegrationThemeEnvOverridesConfig(t *testing.T) {
 		"XDG_CONFIG_HOME="+configDir,
 		"TRY_THEME=minimal",
 	)
-	cmd.Run()
+	_ = cmd.Run()
 
 	stderr := errBuf.String()
 	t.Logf("Minimal theme stderr (%d bytes):\n%s", len(stderr), stderr)

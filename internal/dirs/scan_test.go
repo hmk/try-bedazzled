@@ -54,7 +54,9 @@ func TestScanSkipsFiles(t *testing.T) {
 	dir := t.TempDir()
 	mkdirs(t, dir, "2026-04-11-redis")
 	// Create a regular file
-	os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("hello"), 0644)
+	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("hello"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := Scan(dir)
 	if err != nil {
@@ -75,7 +77,9 @@ func TestScanSortsByMtimeDescending(t *testing.T) {
 	for i, name := range names {
 		p := filepath.Join(dir, name)
 		mtime := base.Add(time.Duration(i) * 24 * time.Hour)
-		os.Chtimes(p, mtime, mtime)
+		if err := os.Chtimes(p, mtime, mtime); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	result, err := Scan(dir)
