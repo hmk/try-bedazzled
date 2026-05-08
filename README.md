@@ -1,9 +1,11 @@
 # try-bedazzled
 
-**A beautiful, themeable scratch-directory manager for your terminal.**
+**A scratch-directory manager that's been dragged through a rainbow.** ✨🌈
 
-A Go rewrite of [tobi/try-cli](https://github.com/tobi/try-cli) (C) using [Charmbracelet](https://charm.sh) libraries —
-almost as fast as C, 15× faster than Ruby, and it actually has a TUI.
+A Go rewrite of [tobi/try-cli](https://github.com/tobi/try-cli) using [Charmbracelet](https://charm.sh) —
+the same dated-throwaway-folder workflow, now with shifting cursor hues, rainbow fuzzy hits,
+gradient row highlights, and a theme picker that lets you turn the sparkle up to 11 (or off, if
+you're a coward).
 
 ![demo](demo.gif)
 
@@ -122,19 +124,19 @@ eval "$(try init ~/workspace/experiments)"
 
 ---
 
-## Differentiators
+## The Bedazzling
 
 ### Themes
 
-Five built-in themes, switchable live with `try theme`:
+Five built-in themes, switchable live with `try theme` — pick your sparkle level:
 
-| Theme | Description |
+| Theme | Vibe |
 |---|---|
-| `bedazzled` *(default)* | Catppuccin Mocha palette with rainbow search rules, shifting cursor hues, rainbow fuzzy hits, and a rainbow gradient row highlight |
-| `rainbow` | Hot-pink accent + full rainbow treatment — the loudest option |
-| `catppuccin` | Catppuccin Mocha pastels, no rainbow |
-| `dracula` | Dark and saturated |
-| `minimal` | ASCII-safe, no unicode — good for CI and accessibility |
+| `bedazzled` *(default)* | 🌈 Catppuccin Mocha pastels under a full rainbow finish — rainbow search rules, shifting cursor hues, rainbow fuzzy hits, gradient row highlight |
+| `rainbow` | 💖 Hot-pink accent, all rainbow, no apologies — the loudest one |
+| `catppuccin` | 🍮 Catppuccin Mocha pastels, no rainbow (for grown-ups) |
+| `dracula` | 🧛 Dark and saturated |
+| `minimal` | 🪨 ASCII-safe, no unicode, no glitter — good for CI and people who hate joy |
 
 Set in config or override per-session:
 
@@ -243,8 +245,8 @@ Benchmarked on macOS (Apple Silicon M4) with 100 try directories:
 | Version (startup only) | 1.2 ms | 2.0 ms | 36 ms |
 | Binary size | 92 KB | 5.1 MB | interpreted |
 
-> Go is ~1.6× slower than C for raw operations, but **15–20× faster than Ruby** — and you get a
-> themeable TUI, configurable layouts, content-aware icons, and a settings menu for that trade-off.
+> Go is ~1.6× slower than C for raw operations, but **15–20× faster than Ruby** — and you trade
+> those microseconds for a wardrobe full of rainbows.
 >
 > Measured with [hyperfine](https://github.com/sharkdp/hyperfine). Reproduce with `bench/bench.sh`.
 
