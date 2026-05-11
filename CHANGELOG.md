@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/hmk/try-bedazzled/compare/v0.1.0...v0.1.1) (2026-05-11)
+
+
+### Bug Fixes
+
+* trigger 0.1.1 to validate signed release pipeline end-to-end ([8beb264](https://github.com/hmk/try-bedazzled/commit/8beb264d146bbcfa5216b48688100ccfcb8216d0))
+
 ## 0.1.0 (2026-05-11)
 
 
