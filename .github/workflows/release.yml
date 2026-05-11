@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload snapshot dist (dry-run only)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-snapshot
           path: dist/
