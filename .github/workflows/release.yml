@@ -3,6 +3,15 @@ name: Release
 on:
   push:
     branches: [main]
+  # Manual dry-run for testing the goreleaser pipeline (signing, notarization,
+  # archive shape) without cutting a real release. Skips publish + uploads
+  # the snapshot dist as a workflow artifact.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run goreleaser in --snapshot mode (no publish, no tag)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -11,6 +20,7 @@ permissions:
 
 jobs:
   release-please:
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -24,21 +34,47 @@ jobs:
 
   goreleaser:
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: |
+      always() &&
+      (needs.release-please.result == 'skipped' ||
+       needs.release-please.outputs.release_created == 'true')
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ needs.release-please.outputs.tag_name }}
+          ref: ${{ needs.release-please.outputs.tag_name || github.ref }}
 
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
+      - name: Install rcodesign (for cross-platform macOS signing/notarization)
+        run: |
+          RCODESIGN_VERSION="0.27.0"
+          curl -fsSL -o /tmp/rcodesign.tar.gz \
+            "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${RCODESIGN_VERSION}/apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          tar -xzf /tmp/rcodesign.tar.gz -C /tmp
+          sudo install "/tmp/apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl/rcodesign" /usr/local/bin/rcodesign
+          rcodesign --version
+
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean
+          args: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && 'release --clean --snapshot --skip=publish' || 'release --clean' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+          MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+          MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
+
+      - name: Upload snapshot dist (dry-run only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-snapshot
+          path: dist/
+          retention-days: 7
