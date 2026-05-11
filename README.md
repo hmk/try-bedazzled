@@ -45,28 +45,20 @@ Pick the tarball for your OS/arch from [Releases](https://github.com/hmk/try-bed
 
 ```bash
 # macOS, Apple Silicon
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Darwin_arm64.tar.gz
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_darwin_arm64.tar.gz
 
 # macOS, Intel
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Darwin_amd64.tar.gz
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_darwin_amd64.tar.gz
 
 # Linux, amd64
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Linux_amd64.tar.gz
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_linux_amd64.tar.gz
 
 # Linux, arm64
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Linux_arm64.tar.gz
+curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_linux_arm64.tar.gz
 
 tar xzf try.tar.gz
 sudo mv try /usr/local/bin/
 ```
-
-> **macOS Gatekeeper**: the published binaries aren't notarized yet. If the
-> first run prints "cannot be opened because the developer cannot be
-> verified", clear the quarantine flag once:
->
-> ```bash
-> xattr -d com.apple.quarantine /usr/local/bin/try
-> ```
 
 ### Debian / RPM
 
