@@ -4,8 +4,8 @@
 
 A Go rewrite of [tobi/try-cli](https://github.com/tobi/try-cli) using [Charmbracelet](https://charm.sh) —
 the same dated-throwaway-folder workflow, now with shifting cursor hues, rainbow fuzzy hits,
-gradient row highlights, and a theme picker that lets you turn the sparkle up to 11 (or off, if
-you're a coward).
+gradient row highlights, and a theme picker that lets you turn the sparkle up to 11 (or all the way
+down to a calm monochrome — every preference welcome). 🦄
 
 ![demo](demo.gif)
 
@@ -83,10 +83,10 @@ Five built-in themes, switchable live with `try theme` — pick your sparkle lev
 | Theme | Vibe |
 |---|---|
 | `bedazzled` *(default)* | 🌈 Catppuccin Mocha pastels under a full rainbow finish — rainbow search rules, shifting cursor hues, rainbow fuzzy hits, gradient row highlight |
-| `rainbow` | 💖 Hot-pink accent, all rainbow, no apologies — the loudest one |
-| `catppuccin` | 🍮 Catppuccin Mocha pastels, no rainbow (for grown-ups) |
+| `rainbow` | 💖 Hot-pink accent, all rainbow, all the time — the loudest one |
+| `catppuccin` | 🍮 Catppuccin Mocha pastels, sparkle dialed back |
 | `dracula` | 🧛 Dark and saturated |
-| `minimal` | 🪨 ASCII-safe, no unicode, no glitter — good for CI and people who hate joy |
+| `minimal` | 🪨 ASCII-safe, no unicode, no glitter — perfect for CI logs and quiet terminals |
 
 Set in config or override per-session:
 
