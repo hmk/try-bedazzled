@@ -33,13 +33,21 @@ Type to filter. Press Enter to `cd`. Type a new name and press Enter to create. 
 
 ## Install
 
+**Homebrew** (macOS, Linux):
+
+```bash
+brew install hmk/tap/try-bedazzled
+```
+
+**curl** (everywhere else):
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hmk/try-bedazzled/main/install.sh | sh
 ```
 
 Then restart your shell (or `source ~/.zshrc`) and run `try`.
 
-The installer downloads the latest release for your platform, drops the binary in `/usr/local/bin/`, and adds the shell function to your rc file. macOS binaries are signed and notarized.
+The curl installer drops the signed-and-notarized binary in `/usr/local/bin/` and adds the shell function to your rc file. The Homebrew formula prints the same one-line shell-config snippet on first install (`brew info try-bedazzled`).
 
 For other install paths (Go, manual download, custom directory), see [INSTALL.md](INSTALL.md).
 
