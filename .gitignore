@@ -23,3 +23,11 @@ Thumbs.db
 *.dylib
 *.test
 *.out
+
+# VHS recordings
+demo.gif
+
+# Project-local Go tool caches (set via GOCACHE / GOMODCACHE / GOLANGCI_LINT_CACHE)
+.gocache/
+.golangci-cache/
+.gomodcache/

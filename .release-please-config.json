@@ -7,7 +7,8 @@
   "packages": {
     ".": {
       "package-name": "try-bedazzled",
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "release-as": "0.1.0"
     }
   },
   "changelog-sections": [
