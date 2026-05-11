@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/hmk/try-bedazzled/compare/v0.1.3...v0.2.0) (2026-05-11)
+
+
+### Features
+
+* add install script and improve readme ([#20](https://github.com/hmk/try-bedazzled/issues/20)) ([ee3af3e](https://github.com/hmk/try-bedazzled/commit/ee3af3e8b72018e112afad968812960757a21c4c))
+
 ## [0.1.3](https://github.com/hmk/try-bedazzled/compare/v0.1.2...v0.1.3) (2026-05-11)
 
 
