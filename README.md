@@ -33,57 +33,15 @@ Type to filter. Press Enter to `cd`. Type a new name and press Enter to create. 
 
 ## Install
 
-### With Go
-
 ```bash
-go install github.com/hmk/try-bedazzled/cmd/try@latest
+curl -fsSL https://raw.githubusercontent.com/hmk/try-bedazzled/main/install.sh | sh
 ```
 
-### curl (pre-built binary)
+Then restart your shell (or `source ~/.zshrc`) and run `try`.
 
-Pick the tarball for your OS/arch from [Releases](https://github.com/hmk/try-bedazzled/releases/latest):
+The installer downloads the latest release for your platform, drops the binary in `/usr/local/bin/`, and adds the shell function to your rc file. macOS binaries are signed and notarized.
 
-```bash
-# macOS, Apple Silicon
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_darwin_arm64.tar.gz
-
-# macOS, Intel
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_darwin_amd64.tar.gz
-
-# Linux, amd64
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_linux_amd64.tar.gz
-
-# Linux, arm64
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_linux_arm64.tar.gz
-
-tar xzf try.tar.gz
-sudo mv try /usr/local/bin/
-```
-
-### Debian / RPM
-
-Each release also ships `.deb` and `.rpm` packages on the Releases page.
-
----
-
-## Setup
-
-Add one line to your shell config and you're done:
-
-**bash / zsh** (`.bashrc` or `.zshrc`):
-```bash
-eval "$(try init)"
-```
-
-**fish** (`config.fish`):
-```fish
-try init | source
-```
-
-Use a custom directory:
-```bash
-eval "$(try init ~/workspace/experiments)"
-```
+For other install paths (Go, manual download, custom directory), see [INSTALL.md](INSTALL.md).
 
 ---
 
