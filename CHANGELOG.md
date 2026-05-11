@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/hmk/try-bedazzled/compare/v0.1.2...v0.1.3) (2026-05-11)
+
+
+### Bug Fixes
+
+* **release:** read notary issuer_id and key_id from vars, not secrets ([#16](https://github.com/hmk/try-bedazzled/issues/16)) ([f2efd48](https://github.com/hmk/try-bedazzled/commit/f2efd48010fb368a6f35a52b31770aae1b5e63c8))
+
 ## [0.1.2](https://github.com/hmk/try-bedazzled/compare/v0.1.1...v0.1.2) (2026-05-11)
 
 
