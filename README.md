@@ -4,8 +4,8 @@
 
 A Go rewrite of [tobi/try-cli](https://github.com/tobi/try-cli) using [Charmbracelet](https://charm.sh) —
 the same dated-throwaway-folder workflow, now with shifting cursor hues, rainbow fuzzy hits,
-gradient row highlights, and a theme picker that lets you turn the sparkle up to 11 (or off, if
-you're a coward).
+gradient row highlights, and a theme picker that lets you turn the sparkle up to 11 (or all the way
+down to a calm monochrome — every preference welcome). 🦄
 
 ![demo](demo.gif)
 
@@ -33,65 +33,15 @@ Type to filter. Press Enter to `cd`. Type a new name and press Enter to create. 
 
 ## Install
 
-### With Go
-
 ```bash
-go install github.com/hmk/try-bedazzled/cmd/try@latest
+curl -fsSL https://raw.githubusercontent.com/hmk/try-bedazzled/main/install.sh | sh
 ```
 
-### curl (pre-built binary)
+Then restart your shell (or `source ~/.zshrc`) and run `try`.
 
-Pick the tarball for your OS/arch from [Releases](https://github.com/hmk/try-bedazzled/releases/latest):
+The installer downloads the latest release for your platform, drops the binary in `/usr/local/bin/`, and adds the shell function to your rc file. macOS binaries are signed and notarized.
 
-```bash
-# macOS, Apple Silicon
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Darwin_arm64.tar.gz
-
-# macOS, Intel
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Darwin_amd64.tar.gz
-
-# Linux, amd64
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Linux_amd64.tar.gz
-
-# Linux, arm64
-curl -fsSL -o try.tar.gz https://github.com/hmk/try-bedazzled/releases/latest/download/try-bedazzled_Linux_arm64.tar.gz
-
-tar xzf try.tar.gz
-sudo mv try /usr/local/bin/
-```
-
-> **macOS Gatekeeper**: the published binaries aren't notarized yet. If the
-> first run prints "cannot be opened because the developer cannot be
-> verified", clear the quarantine flag once:
->
-> ```bash
-> xattr -d com.apple.quarantine /usr/local/bin/try
-> ```
-
-### Debian / RPM
-
-Each release also ships `.deb` and `.rpm` packages on the Releases page.
-
----
-
-## Setup
-
-Add one line to your shell config and you're done:
-
-**bash / zsh** (`.bashrc` or `.zshrc`):
-```bash
-eval "$(try init)"
-```
-
-**fish** (`config.fish`):
-```fish
-try init | source
-```
-
-Use a custom directory:
-```bash
-eval "$(try init ~/workspace/experiments)"
-```
+For other install paths (Go, manual download, custom directory), see [INSTALL.md](INSTALL.md).
 
 ---
 
@@ -133,10 +83,10 @@ Five built-in themes, switchable live with `try theme` — pick your sparkle lev
 | Theme | Vibe |
 |---|---|
 | `bedazzled` *(default)* | 🌈 Catppuccin Mocha pastels under a full rainbow finish — rainbow search rules, shifting cursor hues, rainbow fuzzy hits, gradient row highlight |
-| `rainbow` | 💖 Hot-pink accent, all rainbow, no apologies — the loudest one |
-| `catppuccin` | 🍮 Catppuccin Mocha pastels, no rainbow (for grown-ups) |
+| `rainbow` | 💖 Hot-pink accent, all rainbow, all the time — the loudest one |
+| `catppuccin` | 🍮 Catppuccin Mocha pastels, sparkle dialed back |
 | `dracula` | 🧛 Dark and saturated |
-| `minimal` | 🪨 ASCII-safe, no unicode, no glitter — good for CI and people who hate joy |
+| `minimal` | 🪨 ASCII-safe, no unicode, no glitter — perfect for CI logs and quiet terminals |
 
 Set in config or override per-session:
 
