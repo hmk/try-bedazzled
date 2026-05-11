@@ -62,6 +62,34 @@ nfpms:
       - rpm
     bindir: /usr/bin
 
+homebrew_casks:
+  - name: try-bedazzled
+    binaries:
+      - try
+    repository:
+      owner: hmk
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/hmk/try-bedazzled
+    description: A beautiful, themeable directory manager for try experiments
+    license: BSD-3-Clause
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "chore(cask): bump try-bedazzled to {{ .Tag }}"
+    caveats: |
+      To enable the `try` shell function (so Enter actually `cd`s your shell),
+      add this line to your shell config:
+
+          # bash / zsh
+          eval "$(try init)"
+
+          # fish
+          try init | source
+
+      Then restart your shell.
+
 changelog:
   sort: asc
   filters:

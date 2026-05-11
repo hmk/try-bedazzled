@@ -1,6 +1,14 @@
 # Install
 
-The fast path is the install script in the [README](README.md). This file covers the alternatives.
+The fast paths are in the [README](README.md): Homebrew or the install script. This file covers the alternatives.
+
+## Homebrew
+
+```bash
+brew install hmk/tap/try-bedazzled
+```
+
+This taps `hmk/homebrew-tap` (one-time) and installs the cask. Upgrades work via `brew upgrade try-bedazzled`. The cask prints a one-line shell-config snippet on install — see "Manual shell setup" at the bottom of this file if you missed it.
 
 ## Install script options
 
