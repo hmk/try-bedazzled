@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/hmk/try-bedazzled/compare/v0.1.1...v0.1.2) (2026-05-11)
+
+
+### Bug Fixes
+
+* **release:** notarize.macos.ids must reference build id, not archive id ([#14](https://github.com/hmk/try-bedazzled/issues/14)) ([0d9b45e](https://github.com/hmk/try-bedazzled/commit/0d9b45e58f80e47fd7d1afc14e4d2fbe6528578c))
+
 ## [0.1.1](https://github.com/hmk/try-bedazzled/compare/v0.1.0...v0.1.1) (2026-05-11)
 
 
