@@ -1,11 +1,11 @@
 # try-bedazzled
 
-**A scratch-directory manager that's been dragged through a rainbow.** ✨🌈
+**A modern, themeable scratch-directory manager inspired by [tobi/try-cli](https://github.com/tobi/try-cli).**
 
-A Go rewrite of [tobi/try-cli](https://github.com/tobi/try-cli) using [Charmbracelet](https://charm.sh) —
-the same dated-throwaway-folder workflow, now with shifting cursor hues, rainbow fuzzy hits,
-gradient row highlights, and a theme picker that lets you turn the sparkle up to 11 (or all the way
-down to a calm monochrome — every preference welcome). 🦄
+A Go rewrite using [Charmbracelet](https://charm.sh) — the same dated-throwaway-folder workflow,
+now with shifting cursor hues, rainbow fuzzy hits, gradient row highlights, and a theme picker that
+lets you turn the sparkle up to 11 (or all the way down to a calm monochrome — every preference
+welcome). 🦄
 
 ![demo](demo.gif)
 
