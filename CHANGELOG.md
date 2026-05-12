@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/hmk/try-bedazzled/compare/v0.2.0...v0.3.0) (2026-05-11)
+
+
+### Features
+
+* **install:** publish a homebrew cask to hmk/homebrew-tap on each release ([#22](https://github.com/hmk/try-bedazzled/issues/22)) ([c17aead](https://github.com/hmk/try-bedazzled/commit/c17aead06b3b0110e1950116ce2f2d6c75d6d056))
+
 ## [0.2.0](https://github.com/hmk/try-bedazzled/compare/v0.1.3...v0.2.0) (2026-05-11)
 
 
