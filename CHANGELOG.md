@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/hmk/try-bedazzled/compare/v0.3.0...v0.3.1) (2026-05-12)
+
+
+### Documentation
+
+* **readme:** lead with serious framing, drop "rainbow" tagline ([#24](https://github.com/hmk/try-bedazzled/issues/24)) ([ad8e7c1](https://github.com/hmk/try-bedazzled/commit/ad8e7c1230244ae8ba727ccff94b1147e637e42c))
+
 ## [0.3.0](https://github.com/hmk/try-bedazzled/compare/v0.2.0...v0.3.0) (2026-05-11)
 
 
